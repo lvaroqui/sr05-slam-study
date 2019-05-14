@@ -1,0 +1,21 @@
+#VRML_SIM R2019a utf8
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.18732141291837145 0.9474415209979907 0.25935545598903276 1.8835370723359133
+  position 3.082630671806785 2.0964225911180177 -0.5292349379015738
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 6 6
+}
+Panel {
+  translation -0.5900000000000003 0 0.8700000000000006
+}
+Pioneer2 {
+  translation 0 0 0.41000000000000014
+  controller "test1"
+}
