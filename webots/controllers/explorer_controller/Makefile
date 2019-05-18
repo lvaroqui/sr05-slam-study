@@ -39,7 +39,7 @@
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:
-### CXX_SOURCES = my_plugin.cc my_clever_algo.cpp my_graphics.c++
+CXX_SOURCES = test1.cpp src/Explorator.cpp
 ###
 ### ---- Compilation options ----
 ### if special compilation flags are necessary:
@@ -47,8 +47,8 @@
 ###
 ### ---- Linked libraries ----
 ### if your program needs additional libraries:
-### INCLUDE = -I"/my_library_path/include"
-### LIBRARIES = -L"/path/to/my/library" -lmy_library -lmy_other_library
+### INCLUDE = -I"include"
+LIBRARIES = -lpthread
 ###
 ### ---- Linking options ----
 ### if special linking flags are needed:
@@ -66,7 +66,6 @@
 ### VERBOSE = 1
 ###
 ###-----------------------------------------------------------------------------
-
 ### Do not modify: this includes Webots global Makefile.include
 space :=
 space +=
