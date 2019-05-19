@@ -12,6 +12,7 @@ set(SRCS
         src/Explorer.cpp
         src/UDPClient.cpp
         src/UDPServer.cpp
+        src/AirplugMessage.cpp
         )
 
 # Including WeBots

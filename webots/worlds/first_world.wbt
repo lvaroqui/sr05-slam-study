@@ -2,32 +2,22 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.13270440040708792 0.9453921262665788 0.29769660680926857 2.2940009055659822
-  position 2.82755251611499 2.6278773921696317 -2.0397118077443155
+  orientation -0.1344794587824913 0.9451504673631494 0.29766738015575084 2.284548189204959
+  position 2.849027915917941 2.6278773921696317 -2.0099031278715502
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
-RectangleArena {
-  floorSize 6 6
-}
 Panel {
   translation -0.5900000000000003 0 0.8700000000000006
 }
 Pioneer2 {
-  translation -0.26 -3.469446951953614e-18 0.16000000000000045
   name "1"
   controller "explorer_controller"
-  controllerArgs "2000"
+  controllerArgs "3001"
   supervisor TRUE
   synchronization FALSE
 }
-Pioneer2 {
-  translation 0.3500000000000002 -3.469446951953614e-18 0.13000000000000045
-  name "1(1)"
-  controller "explorer_controller"
-  controllerArgs "2000"
-  supervisor TRUE
-  synchronization FALSE
+Floor {
 }
