@@ -4,9 +4,8 @@
 
 int main(int argc, char **argv) {
     // Create the Robot instance.
-    auto *robot = new Explorer();
+    auto *robot = new Explorer(std::stoi(argv[1]));
     int timeStep = (int) robot->getBasicTimeStep();
-
 
     // Main Loop
     while (robot->step(timeStep) != -1) {

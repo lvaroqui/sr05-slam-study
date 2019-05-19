@@ -5,13 +5,13 @@ find_package (Threads)
 find_package(Boost 1.70.0 COMPONENTS system)
 
 # Defining header and source files
-set(HEADERS
-        include/Explorer.h
-        )
+set(HEADERS)
+
 set(SRCS
         explorer_controller.cpp
         src/Explorer.cpp
         src/UDPClient.cpp
+        src/UDPServer.cpp
         )
 
 # Including WeBots
