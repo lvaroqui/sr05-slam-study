@@ -38,6 +38,10 @@ class Explorer : public Supervisor {
     PositionSensor *rightPositionSensor_;
     DistanceSensor *frontDistanceSensor_;
 
+    double x_ = 0.0;
+    double y_ = 0.0;
+    double heading_ = 0.0;
+
     // Variables for controllers
     double currentLeftRotation_ = 0.0;
     double previousLeftRotation_ = 0.0;
@@ -134,7 +138,11 @@ private:
                     break;
                 case RobOrd::tune:break;
                 case RobOrd::lacc:break;
-                case RobOrd::init:break;
+                case RobOrd::init:
+                    x_ = static_cast<double>(robord.getCommand()[0])/100.0;
+                    y_ = static_cast<double>(robord.getCommand()[1])/100.0;
+                    heading_ = static_cast<double>(robord.getCommand()[2]) * M_PI / 180.0;
+                    break;
                 case RobOrd::curr:break;
                 case RobOrd::join:break;
                 case RobOrd::undefinied:
@@ -150,6 +158,19 @@ public:
     void run() {
         // Get sensor positions
         currentLeftRotation_ = leftPositionSensor_->getValue();
+
+        // Estimate position
+        if (rotating_) {
+            heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
+
+        }
+        else if (translating_) {
+            double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
+            x_ += cos(heading_) * distance;
+            y_ += sin(heading_) * distance;
+        }
+
+        std::cout << heading_ << " " << x_ << " " << y_ << std::endl;
 
         // Com
         reportToMaster();
