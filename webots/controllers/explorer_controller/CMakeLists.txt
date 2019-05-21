@@ -13,6 +13,7 @@ set(SRCS
         src/UDPClient.cpp
         src/UDPServer.cpp
         src/AirplugMessage.cpp
+        src/RobOrd.cpp
         )
 
 # Including WeBots

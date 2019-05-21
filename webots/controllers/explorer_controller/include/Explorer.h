@@ -18,6 +18,7 @@
 #include "AirplugMessage.h"
 #include "UDPClient.h"
 #include "UDPServer.h"
+#include "RobOrd.h"
 
 using namespace webots;
 using std::string;
@@ -52,8 +53,6 @@ class Explorer : public Supervisor {
     const double wheelDiameter_ = 0.0825;
     const double wheelEccentricity_ = 0.18;
 
-    //TODO: PID Class
-
     /// Control loop for translation
     void controlTranslation();
 
@@ -84,6 +83,7 @@ public:
         leftWheelMotor_->setVelocity(0);
     }
 
+private:
     /// Send information about the robot to master
     void reportToMaster() {
         auto position = self_->getPosition();
@@ -105,7 +105,7 @@ public:
     }
 
     /// Ask the robot to translate to a specific distance.
-    /// \param distance Distance to go to (+ forward, - backward)
+    /// \param distance Distance in meters to go to (+ forward, - backward)
     void translate(double distance) {
         resetController();
         targetTranslation_ = distance;
@@ -113,7 +113,7 @@ public:
     }
 
     /// Ask the robot to rotate to a specific angle
-    /// \param angle Angle to rotate to (- right, + left)
+    /// \param angle Angle in radians to rotate to (- right, + left)
     void rotate(double angle) {
         resetController();
         targetRotation_ = -angle;
@@ -124,16 +124,28 @@ public:
     void handleMessages() {
         while (udpServer_.getNumberOfMessages() > 0) {
             AirplugMessage msg(udpServer_.popMessage());
-            string type = msg.getValue("type");
-            if (type == "translate") {
-                translate(std::stod(msg.getValue("distance")));
+            RobOrd robord(msg.getValue("robord"));
+            switch (robord.getType()) {
+                case RobOrd::Type::move :
+                    translate(static_cast<double>(robord.getCommand()[0])/100.0);
+                    break;
+                case RobOrd::Type::turn :
+                    rotate(static_cast<double>(robord.getCommand()[0]) * M_PI / 180.0);
+                    break;
+                case RobOrd::tune:break;
+                case RobOrd::lacc:break;
+                case RobOrd::init:break;
+                case RobOrd::curr:break;
+                case RobOrd::join:break;
+                case RobOrd::undefinied:
+                    break;
             }
-            if (type == "rotate") {
-                rotate(std::stod(msg.getValue("angle")));
-            }
+
+
         }
     }
 
+public:
     /// Called every tick
     void run() {
         // Get sensor positions
