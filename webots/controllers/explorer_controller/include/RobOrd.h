@@ -48,7 +48,7 @@ public:
         }
         else if (type_ == tune || type_ == init || type_ == join) {
             std::vector<string> tmp;
-            boost::split(tmp, message, [](char c) { return c == ','; });
+            boost::split(tmp, command, [](char c) { return c == ','; });
             for (auto &elem : tmp) {
                 command_.push_back(stoi(elem));
             }

@@ -19,6 +19,7 @@
 #include "UDPClient.h"
 #include "UDPServer.h"
 #include "RobOrd.h"
+#include "Network.h"
 
 using namespace webots;
 using std::string;
@@ -27,9 +28,8 @@ class Explorer : public Supervisor {
     // Robot node (useful to get information as supervisor)
     Node *self_;
 
-    // Com
-    UDPClient udpClient_;
-    UDPServer udpServer_;
+    // Network
+    Network net_;
 
     // Robot motors and sensors
     Motor *leftWheelMotor_;
@@ -51,8 +51,7 @@ class Explorer : public Supervisor {
     double targetTranslation_ = 0.0;
 
     bool rotating_ = false;
-    double currentRotation_ = 0.0;
-    double targetRotation_ = 0.0;
+    double targetHeading_ = 0.0;
 
     const double wheelDiameter_ = 0.0825;
     const double wheelEccentricity_ = 0.18;
@@ -68,8 +67,7 @@ public:
     /// \param comPort Com Port to listen to
     explicit Explorer(int comPort) : Supervisor(),
                                      self_(this->getSelf()),
-                                     udpClient_("localhost", "3000"),
-                                     udpServer_(comPort),
+                                     net_(getName(), comPort),
                                      leftWheelMotor_(getMotor("left wheel motor")),
                                      rightWheelMotor_(getMotor("right wheel motor")),
                                      leftPositionSensor_(getPositionSensor("left wheel sensor")),
@@ -88,20 +86,11 @@ public:
     }
 
 private:
-    /// Send information about the robot to master
-    void reportToMaster() {
-        auto position = self_->getPosition();
-        std::stringstream message;
-        message << getName() << " : " << position[0] << " " << position[1] << " " << position[2] << std::endl;
-        udpClient_.sendMessage(message.str());
-    }
-
     /// Reset the controllers for Rotation and Translation
     void resetController() {
         currentTranslation_ = 0.0;
-        currentRotation_ = 0.0;
         targetTranslation_ = 0.0;
-        targetRotation_ = 0.0;
+        targetHeading_ = 0.0;
         rightWheelMotor_->setVelocity(0);
         leftWheelMotor_->setVelocity(0);
         translating_ = false;
@@ -116,19 +105,18 @@ private:
         translating_ = true;
     }
 
-    /// Ask the robot to rotate to a specific angle
+    /// Ask the robot to rotate to a specific angle.
     /// \param angle Angle in radians to rotate to (- right, + left)
     void rotate(double angle) {
         resetController();
-        targetRotation_ = -angle;
+        targetHeading_ = heading_ - angle;
         rotating_ = true;
     }
 
-    /// Handles incoming messages from master
+    /// Handles incoming messages
     void handleMessages() {
-        while (udpServer_.getNumberOfMessages() > 0) {
-            AirplugMessage msg(udpServer_.popMessage());
-            RobOrd robord(msg.getValue("robord"));
+        while (net_.getNumberOfRobotMessages() > 0) {
+            RobOrd robord(net_.popRobotMessage().getValue("robord"));
             switch (robord.getType()) {
                 case RobOrd::Type::move :
                     translate(static_cast<double>(robord.getCommand()[0])/100.0);
@@ -148,8 +136,6 @@ private:
                 case RobOrd::undefinied:
                     break;
             }
-
-
         }
     }
 
@@ -162,7 +148,6 @@ public:
         // Estimate position
         if (rotating_) {
             heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
-
         }
         else if (translating_) {
             double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
@@ -170,10 +155,7 @@ public:
             y_ += sin(heading_) * distance;
         }
 
-        std::cout << heading_ << " " << x_ << " " << y_ << std::endl;
-
         // Com
-        reportToMaster();
         handleMessages();
 
         // Movements

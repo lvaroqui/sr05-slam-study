@@ -43,6 +43,10 @@ public:
         container_[mnemonic] = value;
     }
 
+    void remove(const string& mnemonic) {
+        container_.erase(mnemonic);
+    }
+
     string serialize() {
         std::stringstream serialized;
         for(auto& elem : container_)

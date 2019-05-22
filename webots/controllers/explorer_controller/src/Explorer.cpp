@@ -20,8 +20,7 @@ void Explorer::controlTranslation() {
 }
 
 void Explorer::controlRotation() {
-    currentRotation_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
-    double error = targetRotation_ - currentRotation_;
+    double error = targetHeading_ - heading_;
 
     double command = 15 * error;
     double sign = command / fabs(command);
