@@ -20,6 +20,7 @@
 #include "UDPServer.h"
 #include "RobOrd.h"
 #include "Network.h"
+#include "RobAck.h"
 
 using namespace webots;
 using std::string;
@@ -38,6 +39,7 @@ class Explorer : public Supervisor {
     PositionSensor *rightPositionSensor_;
     DistanceSensor *frontDistanceSensor_;
 
+    // Current position
     double x_ = 0.0;
     double y_ = 0.0;
     double heading_ = 0.0;
@@ -51,6 +53,7 @@ class Explorer : public Supervisor {
     double targetTranslation_ = 0.0;
 
     bool rotating_ = false;
+    double initialHeading_ = 0.0;
     double targetHeading_ = 0.0;
 
     const double wheelDiameter_ = 0.0825;
@@ -109,8 +112,14 @@ private:
     /// \param angle Angle in radians to rotate to (- right, + left)
     void rotate(double angle) {
         resetController();
+        initialHeading_ = heading_;
         targetHeading_ = heading_ - angle;
         rotating_ = true;
+    }
+
+    void stop() {
+        rightWheelMotor_->setVelocity(0);
+        leftWheelMotor_->setVelocity(0);
     }
 
     /// Handles incoming messages
@@ -148,23 +157,31 @@ public:
         // Estimate position
         if (rotating_) {
             heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
+            if (abs(targetHeading_ - heading_) < 0.001) {
+                net_.sendMessage(RobAck::turnedMsg(int(round((initialHeading_ - targetHeading_) * 180.0 / M_PI))));
+                rotating_ = false;
+                stop();
+            }
+            else {
+                controlRotation();
+            }
         }
         else if (translating_) {
             double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
             x_ += cos(heading_) * distance;
             y_ += sin(heading_) * distance;
+            if (abs(currentTranslation_ - targetTranslation_) < 0.001) {
+                net_.sendMessage(RobAck::turnedMsg(int(round(currentTranslation_*100))));
+                translating_ = false;
+                stop();
+            }
+            else {
+                controlTranslation();
+            }
         }
 
         // Com
         handleMessages();
-
-        // Movements
-        if (translating_) {
-            controlTranslation();
-        }
-        else if (rotating_){
-            controlRotation();
-        }
 
         // Update previous sensor values
         previousLeftRotation_ = currentLeftRotation_;

@@ -28,7 +28,7 @@ private:
     Type type_ = undefinied;
     std::vector<int> command_;
 public:
-    RobOrd(string message) {
+    explicit RobOrd(string message) {
         int pos = static_cast<int>(message.find(':'));
 
         string order = message.substr(0, pos);
