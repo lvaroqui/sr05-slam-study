@@ -1,0 +1,23 @@
+#VRML_SIM R2019a utf8
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.1344794587824913 0.9451504673631494 0.29766738015575084 2.284548189204959
+  position 2.849027915917941 2.6278773921696317 -2.0099031278715502
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+Panel {
+  translation -0.5900000000000003 0 0.8700000000000006
+}
+Pioneer2 {
+  name "1"
+  controller "explorer_controller"
+  controllerArgs "3001"
+  supervisor TRUE
+  synchronization FALSE
+}
+Floor {
+}
