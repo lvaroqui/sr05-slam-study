@@ -10,7 +10,9 @@
 #include "UDPServer.h"
 #include "UDPClient.h"
 #include "AirplugMessage.h"
+#include "MailBox.h"
 #include <thread>
+#include <map>
 
 class Network {
     UDPServer udpServer_;
@@ -19,48 +21,50 @@ class Network {
 
     std::thread runner_;
 
-    std::mutex mutexRobotMessages_;
-    std::queue<AirplugMessage> robotMessages_;
+    MailBox mailBox_;
+
+    std::map<string, MailBox *> subscribers;
 
     void run() {
         while (true) {
             while (udpServer_.getNumberOfMessages() > 0) {
-                mutexRobotMessages_.lock();
-                robotMessages_.push(AirplugMessage(udpServer_.popMessage()));
-                mutexRobotMessages_.unlock();
+                mailBox_.push(AirplugMessage(udpServer_.popMessage()));
+            }
+            while (mailBox_.size() > 0) {
+                AirplugMessage msg = mailBox_.pop();
+                if (subscribers.count(msg.getDestinationApp()) == 1) {
+                    subscribers[msg.getDestinationApp()]->push(msg);
+                }
+                else {
+                    std::cout << "Unknown destination app: " << msg.getDestinationApp() << std::endl;
+                }
             }
         }
     }
 
-public:
-    explicit Network(std::string name, int comPort) : nodeName_(std::move(name)), udpServer_(comPort),
-                                    runner_(&Network::run, this) {
-    }
-
-    void sendMessage(AirplugMessage message) {
+    void sendMessageUDP(AirplugMessage message) {
         UDPClient client("localhost", 3000);
 
         // Adding header
         message.add("sender", nodeName_);
-        
+
         client.sendMessage(message.serialize());
     }
 
-    AirplugMessage popRobotMessage() {
-        AirplugMessage message;
-        mutexRobotMessages_.lock();
-        message = robotMessages_.back();
-        robotMessages_.pop();
-        mutexRobotMessages_.unlock();
-        return message;
+public:
+    explicit Network(std::string name, int comPort) : nodeName_(std::move(name)), udpServer_(comPort) {
     }
 
-    int getNumberOfRobotMessages() {
-        int numberOfMessages;
-        mutexRobotMessages_.lock();
-        numberOfMessages = robotMessages_.size();
-        mutexRobotMessages_.unlock();
-        return numberOfMessages;
+    void addSubscriber(const string &appName, MailBox *mailBox) {
+        subscribers[appName] = mailBox;
+    }
+
+    void launch() {
+        runner_ = std::thread(&Network::run, this);
+    }
+
+    void giveMessage(AirplugMessage msg) {
+        mailBox_.push(msg);
     }
 };
 

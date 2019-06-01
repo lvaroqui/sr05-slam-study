@@ -58,14 +58,20 @@ public:
     }
 
     static AirplugMessage turnedMsg(int value) {
-        AirplugMessage msg;
+        AirplugMessage msg(AirplugMessage::Type::local, "MAP");
         msg.add("roback", "turned:" + std::to_string(value));
         return msg;
     }
 
     static AirplugMessage movedMsg(int value) {
-        AirplugMessage msg;
+        AirplugMessage msg(AirplugMessage::Type::local, "MAP");
         msg.add("roback", "moved:" + std::to_string(value));
+        return msg;
+    }
+
+    static AirplugMessage joinedMsg(int x, int y) {
+        AirplugMessage msg(AirplugMessage::Type::local, "MAP");
+        msg.add("roback", "joined:" + std::to_string(x) + "," + std::to_string(y));
         return msg;
     }
 
