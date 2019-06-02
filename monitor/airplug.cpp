@@ -141,6 +141,7 @@ void Application::receiveCom() {
         _socket->readDatagram(buffer.data(),buffer.size(),&sender,&senderPort);
 
         msg = buffer.toStdString();
+        msg = msg.substr(0,msg.size()-1);
         buffer.clear();
 
         cout << "Message from : " << sender.toString().toStdString() << endl;
@@ -152,9 +153,9 @@ void Application::receiveCom() {
         vector<string> args = APG_msg_split(msg);
 
 
-        if(args[2] == _appName || args[2] == "broadcast") //si on est bien concerné par le msg
+        if(args[3] == _appName || args[3] == "broadcast") //si on est bien concerné par le msg
         {
-            receive(args[3], args[1]);
+            receive(args[4], args[2]);
         }
 
 
@@ -165,13 +166,13 @@ void Application::receiveCom() {
 
 }
 
-void Application::sendCom(std::string const& from, std::string const& header, std::string const& msg) {
+void Application::sendCom(std::string const& where,std::string const& from, std::string const& header, std::string const& msg) {
     if(_adressToSend == QHostAddress::Null && !_local)
     {
         QMessageBox::critical(this,"Error","You are not in localhost mode and there is no ip address specified");
         return;
     }
-    string msgToSend = from + header + msg ;
+    string msgToSend =where + from + header + msg ;
     cout << "send communication : " << msgToSend << endl;
     QByteArray datagram(msgToSend.c_str(),msgToSend.size()+1);
     cout << "port To Send value = " << _portToSend << endl;
@@ -189,7 +190,14 @@ void Application::send(std::string const& what, std::string const& who) {
     string from = apg_com_delim + _appName;
     string header = apg_com_delim + who;
     string payload = apg_com_delim + what;
-    sendCom(from,header,payload);
+    string where;
+    if(_local)
+        where = "LCH";
+    else {
+        where = "AIR";
+    }
+    where = apg_com_delim + where;
+    sendCom(where, from,header,payload);
 }
 
 

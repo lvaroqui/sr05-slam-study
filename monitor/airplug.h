@@ -84,7 +84,7 @@ public:
     /**
      * @brief sendCom : permetet d'envoyer la concatenation de from, header et payload sur stdout
      */
-    void sendCom(std::string const& from, std::string const& header, std::string const& payload);
+    void sendCom(std::string const& where, std::string const& from, std::string const& header, std::string const& payload);
     /**
      * @brief send: construit le from, header, payload du message qui va être envoyé sur stdout : from est le nom d'application le header contient l'application visée par le message
      * ,c'est-à-dire who et payload qui contient le contenu du message c'est à dire what

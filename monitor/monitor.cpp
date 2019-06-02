@@ -46,9 +46,15 @@ static const string MAP_mnemotype = "typemsg";
 /*types de msgs*/
 
 static const string MAP_obsmsg = "OBSMSG";
+static const string MAP_connect = "MAPCO";
 
+
+static const string ROB_connect = "ROBCO";
+static const string ROB_ackord = "ROBACK";
+static const string ROB_ord = "robord";
 /* informations msgs*/
 
+static const string ROB_join = "join";
 static const string ROB_xpos = "xpos";
 static const string ROB_ypos = "ypos";
 
@@ -130,7 +136,7 @@ Monitor::Monitor() : Application("MAP")
 
     _distance = new QSpinBox();
     _distance->setSuffix(" cm");
-    _distance->setMinimum(0);
+    _distance->setMinimum(1);
 
 
 
@@ -174,6 +180,10 @@ Monitor::Monitor() : Application("MAP")
 
     connect(_connectButton,&QPushButton::clicked, this, &Monitor::tryToConnect);
     connect(_localhost,&QCheckBox::stateChanged,this, &Monitor::changeLocalHostState);
+    connect(_back,&QCheckBox::clicked,this,&Monitor::goBack);
+    connect(_front,&QCheckBox::clicked,this,&Monitor::goFront);
+    connect(_right,&QCheckBox::clicked,this,&Monitor::goRight);
+    connect(_left,&QCheckBox::clicked,this,&Monitor::goLeft);
     //resize(500,500);
 }
 
@@ -193,6 +203,15 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP),QPen((QColor(200, 200, 255))),QBrush((QColor(200, 200, 255))));
                cout << "I will draw a rect at (" << x << "," <<y <<") of 10px*10px"<<endl;
            }
+           else if (type == ROB_connect || type == ROB_ackord)
+           {
+               string xpos = APG_msg_splitstr(msg, ROB_xpos);
+               string ypos = APG_msg_splitstr(msg, ROB_ypos);
+               _XconnectedRobot = atof(xpos.c_str());
+               _YconnectedRobot = atof(ypos.c_str());
+
+           }
+
 
     }
 }
@@ -216,14 +235,18 @@ void Monitor::tryToConnect()
 
     }
     cout << "TRY TO CONNECT BEGIN" << endl;
-    string msg = APG_msg_createmsg(MAP_mnemotype,"HELLO");
-    send(msg,"MAP");
+
+
+    string msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
+    send(msg,MAP_defaultapp);
 
     string info = "Information : You are connected with ";
     if(_local)
         info += "localhost";
     else
         info += _ipAdress->text().toStdString();
+
+
     info += " on port ";
     info += to_string(_portToSend);
 
@@ -244,4 +267,47 @@ void Monitor::changeLocalHostState(int state)
         _ipAdress->setVisible(true);
         _ipLabel->setVisible(true);
     }
+}
+
+void Monitor::goBack()
+{
+    double newY = _YconnectedRobot - _distance->value();
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
+    string move = to_string(_XconnectedRobot);
+    move += ",";
+    move += to_string(newY);
+    APG_msg_addmsg(msg,ROB_join,move);
+    send(msg,MAP_defaultapp);
+}
+void Monitor::goFront()
+{
+    double newY = _YconnectedRobot + _distance->value();
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
+    string move = to_string(_XconnectedRobot);
+    move += ",";
+    move += to_string(newY);
+    APG_msg_addmsg(msg,ROB_join,move);
+    send(msg,MAP_defaultapp);
+}
+
+void Monitor::goLeft()
+{
+    double newX = _XconnectedRobot - _distance->value();
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
+    string move = to_string(newX);
+    move += ",";
+    move += to_string(_YconnectedRobot);
+    APG_msg_addmsg(msg,ROB_join,move);
+    send(msg,MAP_defaultapp);
+}
+
+void Monitor::goRight()
+{
+    double newX = _XconnectedRobot + _distance->value();
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
+    string move = to_string(newX);
+    move += ",";
+    move += to_string(_YconnectedRobot);
+    APG_msg_addmsg(msg,ROB_join,move);
+    send(msg,MAP_defaultapp);
 }

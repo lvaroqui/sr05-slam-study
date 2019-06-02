@@ -39,6 +39,8 @@ private:
     QSpinBox* _distance;
     QLabel* _connectedRobotInfo;
     QLabel* _ipLabel;
+    double _XconnectedRobot;
+    double _YconnectedRobot;
 
 public:
     Monitor();
@@ -46,6 +48,10 @@ public:
 
 public slots:
     void tryToConnect();
+    void goBack();
+    void goFront();
+    void goRight();
+    void goLeft();
     void changeLocalHostState(int state);
 };
 
