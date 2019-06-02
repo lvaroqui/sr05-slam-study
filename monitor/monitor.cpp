@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QLabel>
+#include <QCheckBox>
 
 #include <QPainter>
 #include <QGraphicsView>
@@ -16,6 +17,7 @@
 #include <QGridLayout>
 #include <QSpacerItem>
 #include <QCommonStyle>
+#include <QMessageBox>
 #include <iostream>
 
 
@@ -89,17 +91,25 @@ void CustomQGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 
 Monitor::Monitor() : Application("MAP")
 {
+    //emplacement sur lequel le socket va lire => port 65535 pour tout sender
+    _socket->disconnectFromHost();
+    _socket->bind(QHostAddress::LocalHost,65535);
+
     _map = new CustomQGraphicsScene(this);
     _mapView = new QGraphicsView(_map,this);
 
-    QLabel* ipLabel = new QLabel("IP address: ");
+    QLabel* _localHostLabel = new QLabel("LocalHost: ");
+    _localhost = new QCheckBox();
+
+    _ipLabel = new QLabel("IP address: ");
+    //_ipLabel->setVisible(false);
     _ipAdress = new QLineEdit();
     _ipAdress->setInputMask("000.000.000.000;_");
+   // _ipAdress->setVisible(false);
 
     QLabel* portLabel = new QLabel("Port: ");
-    _port = new QComboBox();
-    _port->addItem("4646");
-    _port->addItem("4848");
+    _port = new QSpinBox();
+    _port->setRange(0,65535);
 
     _connectButton = new QPushButton("Connect to this robot");
     _connectedRobotInfo = new QLabel("Information : You are not connected to any robots.");
@@ -126,18 +136,19 @@ Monitor::Monitor() : Application("MAP")
 
     QGridLayout* monitorLayout = new QGridLayout();
 
-
-    monitorLayout->addWidget(ipLabel,0,0,1,1);
-    monitorLayout->addWidget(_ipAdress,0,1,1,2);
-    monitorLayout->addWidget(portLabel,1,0,1,1);
-    monitorLayout->addWidget(_port,1,1,1,2);
-    monitorLayout->addWidget(_connectButton,2,0,1,3);
-    monitorLayout->addWidget(_connectedRobotInfo,6,0,1,3);
-    monitorLayout->addWidget(_front,3,1,1,1);
-    monitorLayout->addWidget(_left,4,0,1,1);
-    monitorLayout->addWidget(_distance,4,1,1,1);
-    monitorLayout->addWidget(_right,4,2,1,1);
-    monitorLayout->addWidget(_back,5,1,1,1);
+    monitorLayout->addWidget(_localHostLabel,0,0,1,2);
+    monitorLayout->addWidget(_localhost,0,2,1,1);
+    monitorLayout->addWidget(_ipLabel,1,0,1,1);
+    monitorLayout->addWidget(_ipAdress,1,1,1,2);
+    monitorLayout->addWidget(portLabel,2,0,1,1);
+    monitorLayout->addWidget(_port,2,1,1,2);
+    monitorLayout->addWidget(_connectButton,3,0,1,3);
+    monitorLayout->addWidget(_connectedRobotInfo,7,0,1,3);
+    monitorLayout->addWidget(_front,4,1,1,1);
+    monitorLayout->addWidget(_left,5,0,1,1);
+    monitorLayout->addWidget(_distance,5,1,1,1);
+    monitorLayout->addWidget(_right,5,2,1,1);
+    monitorLayout->addWidget(_back,6,1,1,1);
 
     monitorLayout->setObjectName("Monitor");
 
@@ -162,6 +173,7 @@ Monitor::Monitor() : Application("MAP")
     mainLayout->addWidget(_mapView);
 
     connect(_connectButton,&QPushButton::clicked, this, &Monitor::tryToConnect);
+    connect(_localhost,&QCheckBox::stateChanged,this, &Monitor::changeLocalHostState);
     //resize(500,500);
 }
 
@@ -189,8 +201,47 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 void Monitor::tryToConnect()
 {
 
+    _adressToSend.setAddress(_ipAdress->text());
+    _portToSend = _port->value();
+    if(!_local)
+    {
+        if(_adressToSend == QHostAddress::Null)
+        {
+            QMessageBox::critical(this,"Error","Wrong IP Address");
+            _connectedRobotInfo->setText("Information : You are not connected to any robots.");
+            return;
+        }
+
+
+
+    }
     cout << "TRY TO CONNECT BEGIN" << endl;
     string msg = APG_msg_createmsg(MAP_mnemotype,"HELLO");
     send(msg,"MAP");
 
+    string info = "Information : You are connected with ";
+    if(_local)
+        info += "localhost";
+    else
+        info += _ipAdress->text().toStdString();
+    info += " on port ";
+    info += to_string(_portToSend);
+
+    _connectedRobotInfo->setText(info.c_str());
+
+}
+
+void Monitor::changeLocalHostState(int state)
+{
+    if(state == Qt::Checked)
+    {
+        _local = true;
+        _ipAdress->setVisible(false);
+        _ipLabel->setVisible(false);
+    }
+    else {
+        _local = false;
+        _ipAdress->setVisible(true);
+        _ipLabel->setVisible(true);
+    }
 }

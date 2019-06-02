@@ -69,6 +69,9 @@ class Application : public QWidget {
 protected:
     std::string _appName;
     QUdpSocket* _socket;
+    QHostAddress _adressToSend;
+    quint16 _portToSend;
+    bool _local;
 public:
     Application(std::string const& appName);
     ~Application() = default;

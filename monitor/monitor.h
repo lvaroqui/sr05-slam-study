@@ -7,7 +7,7 @@
 
 
 class QLineEdit;
-class QComboBox;
+class QCheckBox;
 class QPushButton;
 class QSpinBox;
 class QLabel;
@@ -28,8 +28,9 @@ private:
     CustomQGraphicsScene* _map;
     QGraphicsView* _mapView;
     std::vector<std::pair<double,double>> _obstacles;
+    QCheckBox* _localhost;
     QLineEdit* _ipAdress;
-    QComboBox* _port;
+    QSpinBox* _port;
     QPushButton* _connectButton;
     QPushButton* _front;
     QPushButton* _back;
@@ -37,6 +38,7 @@ private:
     QPushButton* _right;
     QSpinBox* _distance;
     QLabel* _connectedRobotInfo;
+    QLabel* _ipLabel;
 
 public:
     Monitor();
@@ -44,6 +46,7 @@ public:
 
 public slots:
     void tryToConnect();
+    void changeLocalHostState(int state);
 };
 
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <QEvent>
 #include <QString>
+#include <QMessageBox>
 #include <unistd.h>
 #include <poll.h>
 #include <fcntl.h>
@@ -110,9 +111,9 @@ string APG_msg_concatemsg (string const& firstMsg, string const& secondMsg) {
 }
 
 
-Application::Application(string const& appName):_appName(appName) {
+Application::Application(string const& appName):_appName(appName) , _local(false),_adressToSend(),_portToSend(0) {
     _socket = new QUdpSocket(this);
-    _socket->bind(QHostAddress::LocalHost,4646);
+    _socket->bind(QHostAddress::LocalHost,4646); //depends on the app
     //_socket->installEventFilter(this);
     connect(_socket, &QUdpSocket::readyRead,this,&Application::receiveCom);
 }
@@ -165,11 +166,21 @@ void Application::receiveCom() {
 }
 
 void Application::sendCom(std::string const& from, std::string const& header, std::string const& msg) {
+    if(_adressToSend == QHostAddress::Null && !_local)
+    {
+        QMessageBox::critical(this,"Error","You are not in localhost mode and there is no ip address specified");
+        return;
+    }
     string msgToSend = from + header + msg ;
     cout << "send communication : " << msgToSend << endl;
     QByteArray datagram(msgToSend.c_str(),msgToSend.size()+1);
-    _socket->writeDatagram(datagram,QHostAddress::LocalHost,4646);
-    _socket->writeDatagram(datagram,QHostAddress::Broadcast,4646);
+    cout << "port To Send value = " << _portToSend << endl;
+    if(_local)
+        _socket->writeDatagram(datagram,QHostAddress::LocalHost,_portToSend);
+    else {
+        _socket->writeDatagram(datagram,_adressToSend,_portToSend);
+    }
+
 }
 
 void Application::send(std::string const& what, std::string const& who) {
