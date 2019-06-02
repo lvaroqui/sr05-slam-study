@@ -139,6 +139,8 @@ Monitor::Monitor() : Application("MAP")
     monitorLayout->addWidget(_right,4,2,1,1);
     monitorLayout->addWidget(_back,5,1,1,1);
 
+    monitorLayout->setObjectName("Monitor");
+
     QSpacerItem* space = new QSpacerItem(40,50,QSizePolicy::Minimum,QSizePolicy::Maximum);
     monitorLayout->addItem(space,7,0,3);
 
@@ -153,12 +155,13 @@ Monitor::Monitor() : Application("MAP")
     spRight.setHorizontalStretch(3);
 
     _mapView->setSizePolicy(spRight);
-
+    _mapView->setObjectName("Map");
 
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(monitor);
     mainLayout->addWidget(_mapView);
 
+    connect(_connectButton,&QPushButton::clicked, this, &Monitor::tryToConnect);
     //resize(500,500);
 }
 
@@ -180,4 +183,14 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
            }
 
     }
+}
+
+
+void Monitor::tryToConnect()
+{
+
+    cout << "TRY TO CONNECT BEGIN" << endl;
+    string msg = APG_msg_createmsg(MAP_mnemotype,"HELLO");
+    send(msg,"MAP");
+
 }

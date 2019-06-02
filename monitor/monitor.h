@@ -41,6 +41,9 @@ private:
 public:
     Monitor();
     void receive(std::string const& msg, std::string  const& who) override;
+
+public slots:
+    void tryToConnect();
 };
 
 

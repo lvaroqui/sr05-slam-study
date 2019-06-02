@@ -111,22 +111,43 @@ string APG_msg_concatemsg (string const& firstMsg, string const& secondMsg) {
 
 
 Application::Application(string const& appName):_appName(appName) {
-    _stdinSocket = new QSocketNotifier(fileno(stdin),QSocketNotifier::Read,this);
-    //_stdinSocket->installEventFilter(this);
-    connect(_stdinSocket, &QSocketNotifier::activated,this,&Application::receiveCom);
+    _socket = new QUdpSocket(this);
+    _socket->bind(QHostAddress::LocalHost,4646);
+    //_socket->installEventFilter(this);
+    connect(_socket, &QUdpSocket::readyRead,this,&Application::receiveCom);
 }
 
 
 void Application::receiveCom() {
-    _stdinSocket->setEnabled(false); //disconnect la socket pour traiter le message et mettre les autres en attente
+    cout << "BEGIN RECEPTION"<< endl;
+
     string msg;
 
+    QByteArray buffer;
 
-    int ch;
     do
     {
+        //préparation à la récupération d'un datagramme UDP
+
+
+        buffer.resize(_socket->pendingDatagramSize());
+
+        QHostAddress sender;
+        quint16 senderPort;
+
+
+        //récupération du datagramme
+        _socket->readDatagram(buffer.data(),buffer.size(),&sender,&senderPort);
+
+        msg = buffer.toStdString();
+        buffer.clear();
+
+        cout << "Message from : " << sender.toString().toStdString() << endl;
+        cout << "Message port : " << senderPort << endl;
+        cout << "Message : " << msg << endl;
+
         //traitement du message
-        getline(cin,msg);
+
         vector<string> args = APG_msg_split(msg);
 
 
@@ -136,25 +157,19 @@ void Application::receiveCom() {
         }
 
 
-        /* Ce slot s'exécute quand des nouvelles données ont été ajoutées dans stdin. Cependant pendant le traitement du message il
-         * est possible de recevoir d'autres messages qui eux n'auront pas déclencher le signal nous indiquant que de nouvelles données
-         * ont été reçues puisque receiveCom ne peut être bloqué (tout le programme se déroule dans un seul thread et l'action est donc atomique) il faut donc vérifier
-         * le contenu de stdin au cas où il reste des messages à traiter
-         */
 
-        int flag;
-        flag = fcntl(STDIN_FILENO, F_GETFL,0); // on récupère les drapeaux de stdin
-        fcntl(STDIN_FILENO,F_SETFL,flag|O_NONBLOCK); //on ajoute aux drapeaux le drapeau O_NONBLOCK pour faire des lectures non bloquantes
-        ch = ungetc(getc(stdin),stdin); //on récupère un caractère de stdin (qu'on réinsère directement à sa place une fois récupéré
-        fcntl(STDIN_FILENO,F_SETFL,flag); // on remet les flags par défaut
 
-    }while(ch != EOF); // si il n'y avait rien dans STDIN alors ch = EOF donc on n'a plus de messages à traiter pour l'instant sinon on traite le message qui est actuellement dans stdin
-    _stdinSocket->setEnabled(true);
+
+    }while(_socket->hasPendingDatagrams());
+
 }
 
 void Application::sendCom(std::string const& from, std::string const& header, std::string const& msg) {
     string msgToSend = from + header + msg ;
-    cout << msgToSend << endl;
+    cout << "send communication : " << msgToSend << endl;
+    QByteArray datagram(msgToSend.c_str(),msgToSend.size()+1);
+    _socket->writeDatagram(datagram,QHostAddress::LocalHost,4646);
+    _socket->writeDatagram(datagram,QHostAddress::Broadcast,4646);
 }
 
 void Application::send(std::string const& what, std::string const& who) {
@@ -166,15 +181,5 @@ void Application::send(std::string const& what, std::string const& who) {
     sendCom(from,header,payload);
 }
 
-bool Application::eventFilter(QObject *object, QEvent *event)
-{
-    if (object == _stdinSocket && event->type() == QEvent::SockAct)
-    {
-        cerr << "UN MESSAGE EST RECU" << endl;
-    }
-    if (object == _stdinSocket && event->type() == QEvent::SockClose)
-    {
-        cerr << " CANAL VIDE" << endl;
-    }
-    return true;
-}
+
+

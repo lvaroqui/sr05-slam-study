@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <QWidget>
-#include <QSocketNotifier>
+#include <QUdpSocket>
 
 // réimplémentation en C++ des fonctions de la librairie AIRPLUG permettant de construire des messages et en envoyer/recevoir
 // ces fonctions respectent parfaitement la syntaxe de l'intergiciel AIRPLUG.
@@ -68,7 +68,7 @@ std::string APG_msg_concatemsg (std::string const& firstMsg, std::string const& 
 class Application : public QWidget {
 protected:
     std::string _appName;
-    QSocketNotifier* _stdinSocket;
+    QUdpSocket* _socket;
 public:
     Application(std::string const& appName);
     ~Application() = default;
@@ -87,11 +87,7 @@ public:
      * ,c'est-à-dire who et payload qui contient le contenu du message c'est à dire what
      */
     void send(std::string const& what, std::string const& who);
-    /**
-     * @brief eventFilter: fonction ayant servi pour le débug et qui permet de filtrer les évenements sur lesquels l'objet d'une des classes QApplication
-     * a été installé comme filtre d'events. Dans notre cas cela nous a permis de récupérer les évenements du QSocketNotifier afin de vérifier l'activation de celui-ci
-     */
-    bool eventFilter(QObject* object, QEvent* event) override;
+
 public slots:
     /**
      * @brief receiveCom: (cf Readme du programme asynchrone : permet de récupérer les messages sur stdin et d'appeler la méthode receive
