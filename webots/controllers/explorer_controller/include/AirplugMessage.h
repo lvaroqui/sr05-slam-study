@@ -1,5 +1,7 @@
 #include <utility>
 
+#include <utility>
+
 //
 // Created by luc on 19/05/19.
 //
@@ -26,41 +28,51 @@ public:
     };
 
 private:
-    Type type_ = undefined;
+    string emissionApp_ = "";
     string destinationApp_ = "";
+    Type type_ = undefined;
     std::map<string, string> container_;
 
 public:
     AirplugMessage() = default;
 
-    AirplugMessage(Type type, string destinationApp) : type_(type), destinationApp_(std::move(destinationApp)) {
+    AirplugMessage(string emissionApp, string destinationApp, Type type)
+            : emissionApp_(std::move(emissionApp)), destinationApp_(std::move(destinationApp)), type_(type) {
 
     }
 
     explicit AirplugMessage(std::string message) {
-        // Extracting App and Type
+        std::vector<string> buffer;
+
+        // Getting Apps and Type
         int pos = static_cast<int>(message.find('^'));
         string tmp =  message.substr(0, pos);
         message = message.substr(pos+1);
 
-        pos = static_cast<int>(tmp.find('_'));
-        destinationApp_ = tmp.substr(0, pos);
-        string type = tmp.substr(pos + 1);
-        if (tmp == "LOC") type_ = local;
-        else if (tmp == "AIR") type_ = air;
+        boost::split(buffer, tmp, [](char c) { return c == '$'; });
+        emissionApp_ = buffer[1];
+        destinationApp_ = buffer[2];
+
+        if (buffer[3] == "LOC") type_ = local;
+        else if (buffer[3] == "AIR") type_ = air;
         else type_ = undefined;
 
+
         // Getting Mnemonics/Values from message
-        std::vector<string> mnemo_valuePair;
-        boost::split(mnemo_valuePair, message, [](char c) { return c == '^'; });
+        buffer.clear();
+        boost::split(buffer, message, [](char c) { return c == '^'; });
 
         // Adding the Mnemonics/Values to the map
-        for (const auto &elem : mnemo_valuePair) {
+        for (const auto &elem : buffer) {
             pos = static_cast<int>(elem.find('~'));
             string mnemonic = elem.substr(0, pos);
             string value = elem.substr(pos + 1);
             container_[mnemonic] = value;
         }
+    }
+
+    string getEmissionApp() {
+        return destinationApp_;
     }
 
     string getDestinationApp() {
@@ -85,7 +97,7 @@ public:
 
     string serialize() {
         std::stringstream serialized;
-        serialized << destinationApp_;
+        serialized << "$" << emissionApp_ << "$" << destinationApp_ << "$";
         switch (type_) {
             case undefined:
                 serialized << "UND";
@@ -97,6 +109,7 @@ public:
                 serialized << "AIR";
                 break;
         }
+        serialized << "$";
         for (auto &elem : container_) {
             serialized << '^' << elem.first << '~' << elem.second;
         }

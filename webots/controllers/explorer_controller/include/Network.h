@@ -36,7 +36,7 @@ class Network {
                     subscribers[msg.getDestinationApp()]->push(msg);
                 }
                 else {
-                    std::cout << "Unknown destination app: " << msg.getDestinationApp() << std::endl;
+                    std::cout << "Unknown destination app: " << msg.serialize() << std::endl;
                 }
             }
         }

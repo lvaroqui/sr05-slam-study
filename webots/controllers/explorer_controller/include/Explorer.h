@@ -40,16 +40,20 @@ class Explorer : public Supervisor {
     Motor *rightWheelMotor_;
     PositionSensor *leftPositionSensor_;
     PositionSensor *rightPositionSensor_;
-    DistanceSensor *frontDistanceSensor_;
 
+    std::vector<DistanceSensor*> frontDistanceSensors_;
     // Current position
     double x_ = 0.0;
     double y_ = 0.0;
     double heading_ = 0.0;
+    bool collision_ = false;
 
     // Variables for controllers
     double currentLeftRotation_ = 0.0;
     double previousLeftRotation_ = 0.0;
+
+    double currentRightRotation_ = 0.0;
+    double previousRightRotation_ = 0.0;
 
     bool translating_ = false;
     double currentTranslation_ = 0.0;
@@ -79,15 +83,23 @@ public:
                                      leftWheelMotor_(getMotor("left wheel motor")),
                                      rightWheelMotor_(getMotor("right wheel motor")),
                                      leftPositionSensor_(getPositionSensor("left wheel sensor")),
-                                     rightPositionSensor_(getPositionSensor("right wheel sensor")),
-                                     frontDistanceSensor_(getDistanceSensor("ds7")) {
+                                     rightPositionSensor_(getPositionSensor("right wheel sensor")) {
         net_.addSubscriber("ROB", &mailBox_);
         net_.launch();
 
-        frontDistanceSensor_->enable((int) getBasicTimeStep());
+        frontDistanceSensors_.push_back(getDistanceSensor("ds0"));
+        frontDistanceSensors_.push_back(getDistanceSensor("ds1"));
+        frontDistanceSensors_.push_back(getDistanceSensor("ds2"));
+        frontDistanceSensors_.push_back(getDistanceSensor("ds13"));
+        frontDistanceSensors_.push_back(getDistanceSensor("ds14"));
+        frontDistanceSensors_.push_back(getDistanceSensor("ds15"));
+
+        for (auto distanceSensor : frontDistanceSensors_) {
+            distanceSensor->enable((int) getBasicTimeStep());
+        }
 
         leftPositionSensor_->enable((int) getBasicTimeStep());
-        previousLeftRotation_ = leftPositionSensor_->getValue();
+        rightPositionSensor_->enable((int) getBasicTimeStep());
 
         rightWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
         leftWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
@@ -96,6 +108,26 @@ public:
     }
 
 private:
+    double modAngle(double angle) {
+        if (angle > M_PI) {
+            return angle - 2*M_PI;
+        }
+        else if (angle < -M_PI) {
+            return angle + 2*M_PI;
+        }
+        return angle;
+    }
+
+    double saturate(double value, double saturation) {
+        if (value > saturation) {
+            return saturation;
+        }
+        else if (value < -saturation) {
+            return -saturation;
+        }
+        return value;
+    }
+
     /// Reset the controllers for Rotation and Translation
     void resetController() {
         currentTranslation_ = 0.0;
@@ -121,12 +153,14 @@ private:
         resetController();
         initialHeading_ = heading_;
         targetHeading_ = heading_ - angle;
+        targetHeading_ = modAngle(targetHeading_);
         rotating_ = true;
     }
 
     void join(double x, double y) {
         resetController();
         targetHeading_ = atan2(y - y_, x - x_);
+        targetHeading_ = modAngle(targetHeading_);
         targetTranslation_ = sqrt(pow(x - x_, 2) + pow(y - y_, 2));
         joining_ = true;
         rotating_ = true;
@@ -174,12 +208,27 @@ public:
     void run() {
         // Get sensor positions
         currentLeftRotation_ = leftPositionSensor_->getValue();
+        currentRightRotation_ = rightPositionSensor_->getValue();
+
+        double speedLeft = currentLeftRotation_ - previousLeftRotation_;
+        double speedRight = currentRightRotation_ - previousRightRotation_;
+
+        // Translating
+        if (speedLeft * speedRight >= 0) {
+            double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
+            x_ += cos(heading_) * distance;
+            y_ += sin(heading_) * distance;
+        }
+        else // Rotating
+        {
+            std::cout << currentLeftRotation_ << " " << previousLeftRotation_ << std::endl;
+            heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
+            heading_ = modAngle(heading_);
+        }
+        std::cout << heading_ << " " << targetHeading_ << std::endl;
 
         //  If robot is executing a rotating order
         if (rotating_) {
-            // Estimate rotation
-            heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
-
             // Checking if we reached the desired heading
             if (abs(targetHeading_ - heading_) < 0.001) {
                 // If we are in a joining operation we then go to the translating part
@@ -188,7 +237,7 @@ public:
                 }
                 // If we were rotating, acknowledging with turned
                 else {
-                    net_.giveMessage(RobAck::turnedMsg(int(round((initialHeading_ - targetHeading_) * 180.0 / M_PI))));
+                    net_.giveMessage(RobAck::turnedMsg(int(round(modAngle(initialHeading_ - targetHeading_) * 180.0 / M_PI))));
                 }
                 rotating_ = false;
                 stop();
@@ -199,22 +248,38 @@ public:
         }
         // If robot is executing a translating order
         else if (translating_) {
-            // Estimating position
-            double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
-            x_ += cos(heading_) * distance;
-            y_ += sin(heading_) * distance;
+            // Finding minimum distance from obstacles
+            double minDistance = 0.0;
+            for (auto distanceSensor : frontDistanceSensors_) {
+                if (distanceSensor->getValue() > minDistance) {
+                    minDistance = distanceSensor->getValue();
+                }
+            }
+
+            // Detecting collisions
+            if (minDistance > 950 && currentTranslation_ < targetTranslation_ && !collision_) {
+                targetTranslation_ = currentTranslation_ + 0.1;
+                collision_ = true;
+            }
 
             // Checking if we reached the desired position
-            if (abs(currentTranslation_ - targetTranslation_) < 0.001) {
+            if (abs(currentTranslation_ - targetTranslation_) < 0.001 && speedLeft < 0.01)  {
+                AirplugMessage msg;
+
                 // If we were joining, acknowledging with joined
                 if (joining_) {
-                    net_.giveMessage(RobAck::joinedMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100)));
+                    msg = RobAck::joinedMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100));
                     joining_ = false;
                 }
-                // If we were moving, acknowledging with moved
+                    // If we were moving, acknowledging with moved
                 else {
-                    net_.giveMessage(RobAck::movedMsg(int(round(currentTranslation_ * 100))));
+                    msg = RobAck::movedMsg(int(round(currentTranslation_ * 100)));
                 }
+                if (collision_) {
+                    msg.add("robcol", "1");
+                    collision_ = false;
+                }
+                net_.giveMessage(msg);
                 translating_ = false;
                 stop();
             } else {
@@ -228,6 +293,7 @@ public:
 
         // Update previous sensor values
         previousLeftRotation_ = currentLeftRotation_;
+        previousRightRotation_ = currentRightRotation_;
     }
 };
 
