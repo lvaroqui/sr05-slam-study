@@ -2,32 +2,27 @@
 // Created by luc on 17/05/19.
 //
 
-#include "Explorer.h"
+#include "Rob.h"
 
-void Explorer::controlTranslation() {
+void Rob::controlTranslation() {
     currentTranslation_ += (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
     double error = targetTranslation_ - currentTranslation_;
 
     double command = 15 * error;
-    double sign = command / fabs(command);
 
-    if (fabs(command) > 5) {
-        command = 5 * sign;
-    }
+    command = saturate(command, 5);
 
     rightWheelMotor_->setVelocity(command);
     leftWheelMotor_->setVelocity(command);
 }
 
-void Explorer::controlRotation() {
+void Rob::controlRotation() {
     double error = targetHeading_ - heading_;
+    error = modAngle(error);;
 
     double command = 15 * error;
-    double sign = command / fabs(command);
 
-    if (fabs(command) > 2) {
-        command = 2 * sign;
-    }
+    command = saturate(command, 2);
 
     rightWheelMotor_->setVelocity(-command);
     leftWheelMotor_->setVelocity(command);

@@ -15,7 +15,7 @@ using std::string;
 class RobOrd {
 public:
     enum Type {
-        undefinied,
+        undefined,
         move,
         turn,
         tune,
@@ -25,7 +25,7 @@ public:
         join
     };
 private:
-    Type type_ = undefinied;
+    Type type_ = undefined;
     std::vector<int> command_;
 public:
     explicit RobOrd(string message) {
@@ -41,7 +41,7 @@ public:
         else if (order == "init") type_ = init;
         else if (order == "curr") type_ = curr;
         else if (order == "join") type_ = join;
-        else type_ = undefinied;
+        else type_ = undefined;
 
         if (type_ == move || type_ == turn) {
             command_.push_back(stoi(command));

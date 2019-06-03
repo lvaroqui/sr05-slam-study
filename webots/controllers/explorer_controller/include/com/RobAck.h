@@ -58,14 +58,32 @@ public:
     }
 
     static AirplugMessage turnedMsg(int value) {
-        AirplugMessage msg;
+        AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
         msg.add("roback", "turned:" + std::to_string(value));
         return msg;
     }
 
     static AirplugMessage movedMsg(int value) {
-        AirplugMessage msg;
+        AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
         msg.add("roback", "moved:" + std::to_string(value));
+        return msg;
+    }
+
+    static AirplugMessage joinedMsg(int x, int y) {
+        AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
+        msg.add("roback", "joined:" + std::to_string(x) + "," + std::to_string(y));
+        return msg;
+    }
+
+    static AirplugMessage currMsg(int x, int y, int heading) {
+        AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
+        msg.add("roback", "curr:" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
+        return msg;
+    }
+
+    static AirplugMessage initMsg(int x, int y, int heading) {
+        AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
+        msg.add("roback", "init:" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
         return msg;
     }
 
