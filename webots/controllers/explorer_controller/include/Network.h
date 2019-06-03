@@ -7,10 +7,10 @@
 #ifndef EXPLORER_NETWORK_H
 #define EXPLORER_NETWORK_H
 
-#include "UDPServer.h"
-#include "UDPClient.h"
-#include "AirplugMessage.h"
-#include "MailBox.h"
+#include "com/UDPServer.h"
+#include "com/UDPClient.h"
+#include "com/AirplugMessage.h"
+#include "com/MailBox.h"
 #include <thread>
 #include <map>
 

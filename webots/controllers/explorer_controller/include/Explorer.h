@@ -15,12 +15,12 @@
 #include <limits>
 #include <math.h>
 
-#include "AirplugMessage.h"
-#include "UDPClient.h"
-#include "UDPServer.h"
-#include "RobOrd.h"
+#include "com/AirplugMessage.h"
+#include "com/UDPClient.h"
+#include "com/UDPServer.h"
+#include "com/RobOrd.h"
 #include "Network.h"
-#include "RobAck.h"
+#include "com/RobAck.h"
 
 using namespace webots;
 using std::string;
@@ -219,13 +219,11 @@ public:
             x_ += cos(heading_) * distance;
             y_ += sin(heading_) * distance;
         }
-        else // Rotating
-        {
-            std::cout << currentLeftRotation_ << " " << previousLeftRotation_ << std::endl;
+        else { // Rotating
             heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
             heading_ = modAngle(heading_);
         }
-        std::cout << heading_ << " " << targetHeading_ << std::endl;
+
 
         //  If robot is executing a rotating order
         if (rotating_) {

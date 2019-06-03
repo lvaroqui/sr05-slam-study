@@ -12,7 +12,6 @@ void Explorer::controlTranslation() {
 
     command = saturate(command, 5);
 
-    std::cout << command << std::endl;
     rightWheelMotor_->setVelocity(command);
     leftWheelMotor_->setVelocity(command);
 }

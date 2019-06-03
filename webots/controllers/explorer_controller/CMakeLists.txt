@@ -10,13 +10,13 @@ set(HEADERS)
 set(SRCS
         explorer_controller.cpp
         src/Explorer.cpp
-        src/UDPClient.cpp
-        src/UDPServer.cpp
-        src/AirplugMessage.cpp
-        src/RobOrd.cpp
-        src/RobAck.cpp
+        src/com/UDPClient.cpp
+        src/com/UDPServer.cpp
+        src/com/AirplugMessage.cpp
+        src/com/RobOrd.cpp
+        src/com/RobAck.cpp
         src/Network.cpp
-        src/MailBox.cpp
+        src/com/MailBox.cpp
         )
 
 # Including WeBots
