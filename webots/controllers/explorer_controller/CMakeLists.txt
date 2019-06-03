@@ -9,13 +9,14 @@ set(HEADERS)
 
 set(SRCS
         explorer_controller.cpp
-        src/Explorer.cpp
+        src/Rob.cpp
+        src/Net.cpp
+        src/Exp.cpp
         src/com/UDPClient.cpp
         src/com/UDPServer.cpp
         src/com/AirplugMessage.cpp
         src/com/RobOrd.cpp
         src/com/RobAck.cpp
-        src/Network.cpp
         src/com/MailBox.cpp
         )
 

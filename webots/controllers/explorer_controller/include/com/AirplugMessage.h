@@ -72,7 +72,7 @@ public:
     }
 
     string getEmissionApp() {
-        return destinationApp_;
+        return emissionApp_;
     }
 
     string getDestinationApp() {

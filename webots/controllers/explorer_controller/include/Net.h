@@ -14,7 +14,7 @@
 #include <thread>
 #include <map>
 
-class Network {
+class Net {
     UDPServer udpServer_;
 
     std::string nodeName_;
@@ -52,7 +52,7 @@ class Network {
     }
 
 public:
-    explicit Network(std::string name, int comPort) : nodeName_(std::move(name)), udpServer_(comPort) {
+    explicit Net(std::string name, int comPort) : nodeName_(std::move(name)), udpServer_(comPort) {
     }
 
     void addSubscriber(const string &appName, MailBox *mailBox) {
@@ -60,7 +60,7 @@ public:
     }
 
     void launch() {
-        runner_ = std::thread(&Network::run, this);
+        runner_ = std::thread(&Net::run, this);
     }
 
     void giveMessage(AirplugMessage msg) {

@@ -2,9 +2,9 @@
 // Created by luc on 17/05/19.
 //
 
-#include "Explorer.h"
+#include "Rob.h"
 
-void Explorer::controlTranslation() {
+void Rob::controlTranslation() {
     currentTranslation_ += (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
     double error = targetTranslation_ - currentTranslation_;
 
@@ -16,7 +16,7 @@ void Explorer::controlTranslation() {
     leftWheelMotor_->setVelocity(command);
 }
 
-void Explorer::controlRotation() {
+void Rob::controlRotation() {
     double error = targetHeading_ - heading_;
     error = modAngle(error);;
 

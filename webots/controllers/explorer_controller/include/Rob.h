@@ -15,22 +15,26 @@
 #include <limits>
 #include <math.h>
 
+#include "Net.h"
+#include "Exp.h"
 #include "com/AirplugMessage.h"
 #include "com/UDPClient.h"
 #include "com/UDPServer.h"
 #include "com/RobOrd.h"
-#include "Network.h"
 #include "com/RobAck.h"
 
 using namespace webots;
 using std::string;
 
-class Explorer : public Supervisor {
+class Rob : public Supervisor {
     // Robot node (useful to get information as supervisor)
     Node *self_;
 
-    // Network
-    Network net_;
+    // Net
+    Net net_;
+
+    // Exp
+    Exp exp_;
 
     //MailBox
     MailBox mailBox_;
@@ -77,14 +81,16 @@ class Explorer : public Supervisor {
 public:
     /// Constructor for the Explorer
     /// \param comPort Com Port to listen to
-    explicit Explorer(int comPort) : Supervisor(),
+    explicit Rob(int comPort) : Supervisor(),
                                      self_(this->getSelf()),
                                      net_(getName(), comPort),
                                      leftWheelMotor_(getMotor("left wheel motor")),
                                      rightWheelMotor_(getMotor("right wheel motor")),
                                      leftPositionSensor_(getPositionSensor("left wheel sensor")),
-                                     rightPositionSensor_(getPositionSensor("right wheel sensor")) {
+                                     rightPositionSensor_(getPositionSensor("right wheel sensor")),
+                                     exp_(){
         net_.addSubscriber("ROB", &mailBox_);
+        net_.addSubscriber("EXP", exp_.getMailBox());
         net_.launch();
 
         frontDistanceSensors_.push_back(getDistanceSensor("ds0"));
@@ -192,6 +198,7 @@ private:
                     heading_ = static_cast<double>(robord.getCommand()[2]) * M_PI / 180.0;
                     break;
                 case RobOrd::curr:
+                    net_.giveMessage(RobAck::currMsg(static_cast<int>(x_), static_cast<int>(y_), static_cast<int>(heading_) * 180.0 / M_PI));
                     break;
                 case RobOrd::join:
                     join(static_cast<double>(robord.getCommand()[0]) / 100.0,
