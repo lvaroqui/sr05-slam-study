@@ -142,8 +142,8 @@ void Application::receiveCom() {
 
         msg = buffer.toStdString();
         msg = msg.substr(0,msg.size()-1);
-        buffer.clear();
 
+        cout << "Buffer size = "<< buffer.size() << endl;
         cout << "Message from : " << sender.toString().toStdString() << endl;
         cout << "Message port : " << senderPort << endl;
         cout << "Message : " << msg << endl;
@@ -159,7 +159,7 @@ void Application::receiveCom() {
         }
 
 
-
+        buffer.clear();
 
 
     }while(_socket->hasPendingDatagrams());

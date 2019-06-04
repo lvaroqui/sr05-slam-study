@@ -8,6 +8,7 @@
 #include <QSpinBox>
 #include <QLabel>
 #include <QCheckBox>
+#include <QGraphicsRectItem>
 
 #include <QPainter>
 #include <QGraphicsView>
@@ -19,44 +20,39 @@
 #include <QCommonStyle>
 #include <QMessageBox>
 #include <iostream>
+#include "RobAck.h"
 
+#include <utils.h>
 
-#define GRID_STEP 10
-
+#define GRID_STEP 5
+#define ROB_LENGTH 25.4 * 5
+#define ROB_WIDTH 15.24 * 5
 
 using namespace std;
-//ALGO POUR LES SAUVEGARDES = LESTAGE => Quand on fait une demande de sauvegarde il faut faire une action qui envoie un message pour que cela soit pris en compte
-// cela entraine que l'horloge vectorielle du noeud i ayant déclenché la snapshot aura une valeur plus faible de 1 pour l'emplacement i => à corriger
-//application par défaut pour la section critique
+
+//valeur d'un champ non rempli
+static string APG_msg_unknown ="-";
+
+
 static const string MAP_defaultapp = "NET" ;
 
-/*
-   Mnémoniques globales
-   - contient le nom de l'app qui a émit le msg : MAP_mnemoapp = "appmsg"
-   - contient le type de msg : MAP_mnemotype = "typemsg"
-   - contient l'horloge estampillée : MAP_mnemohlg = "hlgmsg"
-   - contient le numéro du site distant : MAP_mnemosite = "sitemsg"
-   - contient le payload (contenu du msg) : MAP_mnemopl = "plmsg"
-   - contient l'horloge vectorielle : MAP_mnemoclck = "clkmsg"
-   - contient l'état de snapshot = équivalent de la couleur dans l'algorithme lestage : MAP_mnemosnap = "snapmsg"
-*/
-static const string MAP_mnemoapp = "appmsg";
+const string MAP_mnemoapp = "appmsg";
 static const string MAP_mnemotype = "typemsg";
-
+static const string ROB_ord = "robord";
+static const string ROB_ack = "roback";
 /*types de msgs*/
 
 static const string MAP_obsmsg = "OBSMSG";
 static const string MAP_connect = "MAPCO";
-
-
 static const string ROB_connect = "ROBCO";
-static const string ROB_ackord = "ROBACK";
-static const string ROB_ord = "robord";
+static const string ROB_msg = "ROBMSG";
+
 /* informations msgs*/
 
-static const string ROB_join = "join";
-static const string ROB_xpos = "xpos";
-static const string ROB_ypos = "ypos";
+static const string xpos = "xpos";
+static const string ypos = "ypos";
+static const string ROB_sender = "snd";
+static const string ROB_obs = "obs";
 
 
 qreal round(qreal val, int step)
@@ -190,25 +186,69 @@ Monitor::Monitor() : Application("MAP")
 void Monitor::receive(std::string const& msg, std::string  const& who)
 {
 
+    cout << " DEBUT RECEIVE MONITORRRRR" << endl;
     if(who == MAP_defaultapp) {//si message reçu depuis une appli NET
            //récupération du type de msg
            string type = APG_msg_splitstr(msg,MAP_mnemotype);
-           if(type == MAP_obsmsg)
+           string robackMsg = APG_msg_splitstr(msg,ROB_ack);
+           cout << "RECUPERE LE TYPE robackMsg : " <<robackMsg <<  endl;
+
+           if(robackMsg != APG_msg_unknown)
            {
-               string xpos = APG_msg_splitstr(msg, ROB_xpos);
-               string ypos = APG_msg_splitstr(msg, ROB_ypos);
-               double x = atof(xpos.c_str());
-               double y = atof(ypos.c_str());
-               _obstacles.push_back(pair<double,double>(x,y));
-               _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP),QPen((QColor(200, 200, 255))),QBrush((QColor(200, 200, 255))));
-               cout << "I will draw a rect at (" << x << "," <<y <<") of 10px*10px"<<endl;
+
+               RobAck ackVal(robackMsg);
+               if(ackVal.getType() == RobAck::joined || ackVal.getType() == RobAck::curr)
+               {
+                   cout << "MODIF POS ROBOT" << endl;
+                   _XconnectedRobot = ackVal.getCommand()[0];
+                   _YconnectedRobot = ackVal.getCommand()[1];
+
+
+                   /* à faire print le rectangle correspondant au robot */
+                   string sender = APG_msg_splitstr(msg,ROB_sender);
+                   _connectedRobotId = sender;
+
+
+                   _robot->setX(_XconnectedRobot*GRID_STEP);
+                   _robot->setY(_YconnectedRobot*GRID_STEP);
+               }
            }
-           else if (type == ROB_connect || type == ROB_ackord)
+           else if(type == MAP_obsmsg) //detection d'obstacles on print un obstacle
+               /* A MODIFIER APRES REU AVEC LUC */
            {
-               string xpos = APG_msg_splitstr(msg, ROB_xpos);
-               string ypos = APG_msg_splitstr(msg, ROB_ypos);
-               _XconnectedRobot = atof(xpos.c_str());
-               _YconnectedRobot = atof(ypos.c_str());
+               string xString = APG_msg_splitstr(msg,xpos);
+               string yString = APG_msg_splitstr(msg,ypos);
+               double x = atof(xString.c_str());
+               double y = atof(yString.c_str());
+               _obstacles.push_back(pair<double,double>(x,y));
+               _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+               cout << "I will draw an obstacle at (" << x << "," << y << ") " << endl;
+           }
+           else if(type == ROB_connect)
+               /* A MODIFIER APRES REU AVEC LUC*/
+           {
+               _map->clear();
+               cout << "CONNEXION EN COURS" << endl;
+               string xString = APG_msg_splitstr(msg,xpos);
+               string yString = APG_msg_splitstr(msg,ypos);
+               cout << "xpos = " << xString << " ypos = " << yString << endl;
+               _XconnectedRobot = stof(xString.c_str());
+               _YconnectedRobot = stof(yString.c_str());
+               _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP + ROB_LENGTH/2,_YconnectedRobot*GRID_STEP + ROB_WIDTH/2,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+
+
+               string sender = APG_msg_splitstr(msg,ROB_sender);
+               _connectedRobotId = sender;
+
+               string obstacles = APG_msg_splitstr(msg,ROB_obs);
+               _obstacles = fromStringToVectorOfPairs(obstacles);
+               for (auto obstacle : _obstacles)
+               {
+                    double x = obstacle.first;
+                    double y = obstacle.second;
+                    _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+               }
+
 
            }
 
@@ -220,8 +260,7 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 void Monitor::tryToConnect()
 {
 
-    _adressToSend.setAddress(_ipAdress->text());
-    _portToSend = _port->value();
+
     if(!_local)
     {
         if(_adressToSend == QHostAddress::Null)
@@ -237,9 +276,8 @@ void Monitor::tryToConnect()
     cout << "TRY TO CONNECT BEGIN" << endl;
 
 
-    string msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
-    send(msg,MAP_defaultapp);
 
+    //mise à jour des informations de connection
     string info = "Information : You are connected with ";
     if(_local)
         info += "localhost";
@@ -251,6 +289,12 @@ void Monitor::tryToConnect()
     info += to_string(_portToSend);
 
     _connectedRobotInfo->setText(info.c_str());
+
+    //envoyer msg au robot souhaité pour lui dire qu'on souhaite se connecter : si en localhost alors la modification de l'adresse n'a aucun impact
+    _adressToSend.setAddress(_ipAdress->text());
+    _portToSend = _port->value();
+    string msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
+    send(msg,MAP_defaultapp);
 
 }
 
@@ -272,42 +316,47 @@ void Monitor::changeLocalHostState(int state)
 void Monitor::goBack()
 {
     double newY = _YconnectedRobot - _distance->value();
-    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
-    string move = to_string(_XconnectedRobot);
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
+    string move = "join:";
+    move += to_string(_XconnectedRobot);
     move += ",";
     move += to_string(newY);
-    APG_msg_addmsg(msg,ROB_join,move);
+    APG_msg_addmsg(msg,ROB_ord,move);
     send(msg,MAP_defaultapp);
 }
 void Monitor::goFront()
 {
     double newY = _YconnectedRobot + _distance->value();
-    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
-    string move = to_string(_XconnectedRobot);
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
+    string move = "join:";
+    move += to_string(_XconnectedRobot);
     move += ",";
     move += to_string(newY);
-    APG_msg_addmsg(msg,ROB_join,move);
+    APG_msg_addmsg(msg,ROB_ord,move);
     send(msg,MAP_defaultapp);
 }
 
 void Monitor::goLeft()
 {
     double newX = _XconnectedRobot - _distance->value();
-    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
-    string move = to_string(newX);
+
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
+    string move = "join:";
+    move += to_string(newX);
     move += ",";
     move += to_string(_YconnectedRobot);
-    APG_msg_addmsg(msg,ROB_join,move);
+    APG_msg_addmsg(msg,ROB_ord,move);
     send(msg,MAP_defaultapp);
 }
 
 void Monitor::goRight()
 {
     double newX = _XconnectedRobot + _distance->value();
-    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_ord);
-    string move = to_string(newX);
+    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
+    string move = "join:";
+    move += to_string(newX);
     move += ",";
     move += to_string(_YconnectedRobot);
-    APG_msg_addmsg(msg,ROB_join,move);
+    APG_msg_addmsg(msg,ROB_ord,move);
     send(msg,MAP_defaultapp);
 }

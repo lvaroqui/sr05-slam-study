@@ -4,13 +4,14 @@
 #include "airplug.h"
 #include <QGraphicsScene>
 #include <vector>
-
+#include <map>
 
 class QLineEdit;
 class QCheckBox;
 class QPushButton;
 class QSpinBox;
 class QLabel;
+
 
 class CustomQGraphicsScene : public QGraphicsScene
 {
@@ -41,6 +42,8 @@ private:
     QLabel* _ipLabel;
     double _XconnectedRobot;
     double _YconnectedRobot;
+    std::string _connectedRobotId;
+    QGraphicsRectItem* _robot;
 
 public:
     Monitor();
