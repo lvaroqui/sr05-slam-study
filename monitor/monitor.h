@@ -29,20 +29,30 @@ private:
     CustomQGraphicsScene* _map;
     QGraphicsView* _mapView;
     std::vector<std::pair<double,double>> _obstacles;
+    std::string _myIp;
+    int _myPort;
     QCheckBox* _localhost;
     QLineEdit* _ipAdress;
     QSpinBox* _port;
     QPushButton* _connectButton;
-    QPushButton* _front;
-    QPushButton* _back;
-    QPushButton* _left;
-    QPushButton* _right;
-    QSpinBox* _distance;
+
+
+    QSpinBox* _moveDistance;
+    QPushButton* _moveButton;
+
+    QSpinBox* _turnAngle;
+    QPushButton* _turnButton;
+
+    QSpinBox* _xJoin;
+    QSpinBox* _yJoin;
+    QPushButton* _joinButton;
+
     QLabel* _connectedRobotInfo;
     QLabel* _ipLabel;
-    double _XconnectedRobot;
-    double _YconnectedRobot;
-    std::string _connectedRobotId;
+    int _XconnectedRobot;
+    int _YconnectedRobot;
+    int _robotAngle;
+
     QGraphicsRectItem* _robot;
 
 public:
@@ -51,10 +61,9 @@ public:
 
 public slots:
     void tryToConnect();
-    void goBack();
-    void goFront();
-    void goRight();
-    void goLeft();
+    void join();
+    void move();
+    void turn();
     void changeLocalHostState(int state);
 };
 

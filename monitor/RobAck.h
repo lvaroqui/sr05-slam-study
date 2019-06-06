@@ -50,10 +50,10 @@ public:
         if (type_ == moved || type_ == turned) {
             command_.push_back(stoi(param));
         }
-        else if (type_ == tuned || type_ == init || type_ == joined) {
+        else if (type_ == tuned || type_ == init || type_ == joined || type_ == curr) {
             std::vector<string> tmp;
 
-            int pos = static_cast<int>(message.find(','));
+            int pos = static_cast<int>(param.find(','));
 
             while(pos != string::npos) {
                 string substr = param.substr(0,pos);

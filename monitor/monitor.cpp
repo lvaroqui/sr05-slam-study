@@ -22,6 +22,8 @@
 #include <iostream>
 #include "RobAck.h"
 
+#include <QNetworkInterface>
+
 #include <utils.h>
 
 #define GRID_STEP 5
@@ -49,10 +51,15 @@ static const string ROB_msg = "ROBMSG";
 
 /* informations msgs*/
 
+static const string MAP_IP = "ip";
+static const string MAP_PORT = "port";
+
 static const string xpos = "xpos";
 static const string ypos = "ypos";
+static const string heading = "heading";
 static const string ROB_sender = "snd";
 static const string ROB_obs = "obs";
+
 
 
 qreal round(qreal val, int step)
@@ -69,6 +76,7 @@ CustomQGraphicsScene::CustomQGraphicsScene(QObject* parent): QGraphicsScene (par
 
 void CustomQGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
+
     int step = GRID_STEP;
        painter->setPen(QPen(QColor(200, 200, 255, 125)));
        // draw horizontal grid
@@ -91,11 +99,21 @@ void CustomQGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
        }
 }
 
-Monitor::Monitor() : Application("MAP")
+Monitor::Monitor() : Application("MAP"), _robot(nullptr)
 {
+    _myPort = 65535;
+
+    QList<QHostAddress> list = QNetworkInterface::allAddresses();
+
+    for(int i = 0; i<list.count();i++)
+    {
+        if(!list[i].isLoopback())
+            if(list[i].protocol() == QAbstractSocket::IPv4Protocol)
+                _myIp = list[i].toString().toStdString();
+    }
     //emplacement sur lequel le socket va lire => port 65535 pour tout sender
     _socket->disconnectFromHost();
-    _socket->bind(QHostAddress::LocalHost,65535);
+    _socket->bind(QHostAddress::AnyIPv4,_myPort);
 
     _map = new CustomQGraphicsScene(this);
     _mapView = new QGraphicsView(_map,this);
@@ -117,24 +135,29 @@ Monitor::Monitor() : Application("MAP")
     _connectedRobotInfo = new QLabel("Information : You are not connected to any robots.");
 
 
-    _front = new QPushButton();
-    QCommonStyle style;
-    _front->setIcon(style.standardIcon(QStyle::SP_ArrowUp));
 
-    _back = new QPushButton();
-    _back->setIcon(style.standardIcon(QStyle::SP_ArrowDown));
-
-    _left = new QPushButton();
-    _left->setIcon(style.standardIcon(QStyle::SP_ArrowLeft));
-
-    _right = new QPushButton();
-    _right->setIcon(style.standardIcon(QStyle::SP_ArrowRight));
-
-    _distance = new QSpinBox();
-    _distance->setSuffix(" cm");
-    _distance->setMinimum(1);
+    _moveButton = new QPushButton("move");
+    _moveDistance = new QSpinBox();
+    _moveDistance->setSuffix(" cm");
+    _moveDistance->setPrefix("move: ");
+    _moveDistance->setMinimum(1);
 
 
+    _turnButton = new QPushButton("turn");
+    _turnAngle = new QSpinBox();
+    _turnAngle->setSuffix("°");
+    _turnAngle->setPrefix("turn: ");
+    _turnAngle->setMinimum(1);
+    _turnAngle->setMaximum(360);
+
+    _joinButton = new QPushButton("join");
+    _xJoin = new QSpinBox();
+    _xJoin->setSuffix(" cm");
+    _xJoin->setPrefix("x: ");
+
+    _yJoin = new QSpinBox();
+    _yJoin->setSuffix(" cm");
+    _yJoin->setPrefix("y: ");
 
     QGridLayout* monitorLayout = new QGridLayout();
 
@@ -146,11 +169,13 @@ Monitor::Monitor() : Application("MAP")
     monitorLayout->addWidget(_port,2,1,1,2);
     monitorLayout->addWidget(_connectButton,3,0,1,3);
     monitorLayout->addWidget(_connectedRobotInfo,7,0,1,3);
-    monitorLayout->addWidget(_front,4,1,1,1);
-    monitorLayout->addWidget(_left,5,0,1,1);
-    monitorLayout->addWidget(_distance,5,1,1,1);
-    monitorLayout->addWidget(_right,5,2,1,1);
-    monitorLayout->addWidget(_back,6,1,1,1);
+    monitorLayout->addWidget(_moveDistance,4,0,1,2);
+    monitorLayout->addWidget(_moveButton,4,2,1,1);
+    monitorLayout->addWidget(_turnAngle,5,0,1,2);
+    monitorLayout->addWidget(_turnButton,5,2,1,1);
+    monitorLayout->addWidget(_xJoin,6,0,1,1);
+    monitorLayout->addWidget(_yJoin,6,1,1,1);
+    monitorLayout->addWidget(_joinButton,6,2,1,1);
 
     monitorLayout->setObjectName("Monitor");
 
@@ -176,20 +201,19 @@ Monitor::Monitor() : Application("MAP")
 
     connect(_connectButton,&QPushButton::clicked, this, &Monitor::tryToConnect);
     connect(_localhost,&QCheckBox::stateChanged,this, &Monitor::changeLocalHostState);
-    connect(_back,&QCheckBox::clicked,this,&Monitor::goBack);
-    connect(_front,&QCheckBox::clicked,this,&Monitor::goFront);
-    connect(_right,&QCheckBox::clicked,this,&Monitor::goRight);
-    connect(_left,&QCheckBox::clicked,this,&Monitor::goLeft);
-    //resize(500,500);
+    connect(_moveButton,&QCheckBox::clicked,this,&Monitor::move);
+    connect(_turnButton,&QCheckBox::clicked,this,&Monitor::turn);
+    connect(_joinButton,&QCheckBox::clicked,this,&Monitor::join);
+
 }
 
 void Monitor::receive(std::string const& msg, std::string  const& who)
 {
 
     cout << " DEBUT RECEIVE MONITORRRRR" << endl;
-    if(who == MAP_defaultapp) {//si message reçu depuis une appli NET
+    if(who == "ROB") {//si message reçu depuis une appli NET
            //récupération du type de msg
-           string type = APG_msg_splitstr(msg,MAP_mnemotype);
+
            string robackMsg = APG_msg_splitstr(msg,ROB_ack);
            cout << "RECUPERE LE TYPE robackMsg : " <<robackMsg <<  endl;
 
@@ -197,24 +221,26 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
            {
 
                RobAck ackVal(robackMsg);
-               if(ackVal.getType() == RobAck::joined || ackVal.getType() == RobAck::curr)
+               if(ackVal.getType() == RobAck::curr)
                {
                    cout << "MODIF POS ROBOT" << endl;
+                   cout << "ackVal.getCommand().size =" << ackVal.getCommand().size() << endl;
                    _XconnectedRobot = ackVal.getCommand()[0];
                    _YconnectedRobot = ackVal.getCommand()[1];
+                   _robotAngle = ackVal.getCommand()[2];
 
 
-                   /* à faire print le rectangle correspondant au robot */
-                   string sender = APG_msg_splitstr(msg,ROB_sender);
-                   _connectedRobotId = sender;
 
-
+                    cout << "_robotAngle = " << _robotAngle << endl;
                    _robot->setX(_XconnectedRobot*GRID_STEP);
                    _robot->setY(_YconnectedRobot*GRID_STEP);
+                   _robot->setRotation(_robotAngle);
+
                }
            }
-           else if(type == MAP_obsmsg) //detection d'obstacles on print un obstacle
-               /* A MODIFIER APRES REU AVEC LUC */
+    }
+    else if(who == MAP_defaultapp) {     /*else if(type == MAP_obsmsg) //detection d'obstacles on print un obstacle
+               // A MODIFIER APRES REU AVEC LUC
            {
                string xString = APG_msg_splitstr(msg,xpos);
                string yString = APG_msg_splitstr(msg,ypos);
@@ -224,30 +250,42 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
                cout << "I will draw an obstacle at (" << x << "," << y << ") " << endl;
            }
-           else if(type == ROB_connect)
-               /* A MODIFIER APRES REU AVEC LUC*/
+           */
+           string type = APG_msg_splitstr(msg,MAP_mnemotype);
+           if(type == ROB_connect)
            {
-               _map->clear();
-               cout << "CONNEXION EN COURS" << endl;
-               string xString = APG_msg_splitstr(msg,xpos);
-               string yString = APG_msg_splitstr(msg,ypos);
-               cout << "xpos = " << xString << " ypos = " << yString << endl;
-               _XconnectedRobot = stof(xString.c_str());
-               _YconnectedRobot = stof(yString.c_str());
-               _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP + ROB_LENGTH/2,_YconnectedRobot*GRID_STEP + ROB_WIDTH/2,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                _map->clear();
+                _robot =nullptr;
+                cout << "CONNEXION EN COURS" << endl;
+                string xString = APG_msg_splitstr(msg,xpos);
+                string yString = APG_msg_splitstr(msg,ypos);
+                string rotation = APG_msg_splitstr(msg,heading);
+                _XconnectedRobot = stoi(xString.c_str());
+                _YconnectedRobot = stoi(yString.c_str());
+                _robotAngle = stoi(rotation.c_str());
 
+                cout << "xpos = " << xString << " ypos = " << yString << " robot angle = " << rotation <<  endl;
 
-               string sender = APG_msg_splitstr(msg,ROB_sender);
-               _connectedRobotId = sender;
+                if(_robot == nullptr){
+                    cout << "create robot" << endl;
+                    _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP + ROB_LENGTH/2,_YconnectedRobot*GRID_STEP + ROB_WIDTH/2,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                }
+                else
+                {
+                    cout << "modify robot" <<endl;
+                    _robot->setX(_XconnectedRobot);
+                    _robot->setY(_YconnectedRobot);
+                }
+                _robot->setRotation(_robotAngle);
 
-               string obstacles = APG_msg_splitstr(msg,ROB_obs);
-               _obstacles = fromStringToVectorOfPairs(obstacles);
-               for (auto obstacle : _obstacles)
-               {
-                    double x = obstacle.first;
-                    double y = obstacle.second;
+                string obstacles = APG_msg_splitstr(msg,ROB_obs);
+                _obstacles = fromStringToVectorOfPairs(obstacles);
+                for (auto obstacle : _obstacles)
+                {
+                     double x = obstacle.first;
+                     double y = obstacle.second;
                     _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
-               }
+                }
 
 
            }
@@ -255,7 +293,6 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
     }
 }
-
 
 void Monitor::tryToConnect()
 {
@@ -294,7 +331,9 @@ void Monitor::tryToConnect()
     _adressToSend.setAddress(_ipAdress->text());
     _portToSend = _port->value();
     string msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
-    send(msg,MAP_defaultapp);
+    APG_msg_addmsg(msg,MAP_IP,_myIp);
+    APG_msg_addmsg(msg,MAP_PORT,to_string(_myPort));
+    send(msg,"NET");
 
 }
 
@@ -313,50 +352,30 @@ void Monitor::changeLocalHostState(int state)
     }
 }
 
-void Monitor::goBack()
+void Monitor::move()
 {
-    double newY = _YconnectedRobot - _distance->value();
     string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
-    string move = "join:";
-    move += to_string(_XconnectedRobot);
-    move += ",";
-    move += to_string(newY);
+    string move = "move:";
+    move += to_string(_moveDistance->value());
     APG_msg_addmsg(msg,ROB_ord,move);
-    send(msg,MAP_defaultapp);
-}
-void Monitor::goFront()
-{
-    double newY = _YconnectedRobot + _distance->value();
-    string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
-    string move = "join:";
-    move += to_string(_XconnectedRobot);
-    move += ",";
-    move += to_string(newY);
-    APG_msg_addmsg(msg,ROB_ord,move);
-    send(msg,MAP_defaultapp);
+    send(msg,"ROB");
+
 }
 
-void Monitor::goLeft()
+void Monitor::turn()
 {
-    double newX = _XconnectedRobot - _distance->value();
-
     string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
-    string move = "join:";
-    move += to_string(newX);
-    move += ",";
-    move += to_string(_YconnectedRobot);
-    APG_msg_addmsg(msg,ROB_ord,move);
-    send(msg,MAP_defaultapp);
+    string turn = "turn:";
+    turn += to_string(_turnAngle->value());
+    APG_msg_addmsg(msg,ROB_ord,turn);
+    send(msg,"ROB");
 }
 
-void Monitor::goRight()
+void Monitor::join()
 {
-    double newX = _XconnectedRobot + _distance->value();
     string msg = APG_msg_createmsg(MAP_mnemotype,ROB_msg);
-    string move = "join:";
-    move += to_string(newX);
-    move += ",";
-    move += to_string(_YconnectedRobot);
-    APG_msg_addmsg(msg,ROB_ord,move);
-    send(msg,MAP_defaultapp);
+    string join = "join:";
+    join += to_string(_xJoin->value()) + "," + to_string(_yJoin->value());
+    APG_msg_addmsg(msg,ROB_ord,join);
+    send(msg,"ROB");
 }
