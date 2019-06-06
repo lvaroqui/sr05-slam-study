@@ -32,11 +32,9 @@ class Net {
             }
             while (mailBox_.size() > 0) {
                 AirplugMessage msg = mailBox_.pop();
+                std::cout << "Received: " << msg.serialize() << std::endl;
                 if (subscribers.count(msg.getDestinationApp()) == 1) {
                     subscribers[msg.getDestinationApp()]->push(msg);
-                }
-                else {
-                    std::cout << "Unknown destination app: " << msg.serialize() << std::endl;
                 }
             }
         }

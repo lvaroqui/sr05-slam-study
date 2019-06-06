@@ -198,7 +198,7 @@ private:
                     heading_ = static_cast<double>(robord.getCommand()[2]) * M_PI / 180.0;
                     break;
                 case RobOrd::curr:
-                    net_.giveMessage(RobAck::currMsg(static_cast<int>(x_), static_cast<int>(y_), static_cast<int>(heading_) * 180.0 / M_PI));
+                    net_.giveMessage(RobAck::currMsg(static_cast<int>(x_), static_cast<int>(y_), static_cast<int>(heading_ * 180.0 / M_PI)));
                     break;
                 case RobOrd::join:
                     join(static_cast<double>(robord.getCommand()[0]) / 100.0,
