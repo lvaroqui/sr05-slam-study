@@ -50,12 +50,15 @@ public:
         message = message.substr(pos+1);
 
         boost::split(buffer, tmp, [](char c) { return c == '$'; });
-        emissionApp_ = buffer[1];
-        destinationApp_ = buffer[2];
 
-        if (buffer[3] == "LOC") type_ = local;
-        else if (buffer[3] == "AIR") type_ = air;
+        if (buffer[1] == "LCH") type_ = local;
+        else if (buffer[1] == "AIR") type_ = air;
         else type_ = undefined;
+
+        emissionApp_ = buffer[2];
+        destinationApp_ = buffer[3];
+
+
 
 
         // Getting Mnemonics/Values from message
@@ -97,19 +100,19 @@ public:
 
     string serialize() {
         std::stringstream serialized;
-        serialized << "$" << emissionApp_ << "$" << destinationApp_ << "$";
+        serialized << "$";
         switch (type_) {
             case undefined:
                 serialized << "UND";
                 break;
             case local:
-                serialized << "LOC";
+                serialized << "LCH";
                 break;
             case air:
                 serialized << "AIR";
                 break;
         }
-        serialized << "$";
+        serialized << "$" << emissionApp_ << "$" << destinationApp_ << "$";
         for (auto &elem : container_) {
             serialized << '^' << elem.first << '~' << elem.second;
         }
