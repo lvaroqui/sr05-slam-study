@@ -48,7 +48,7 @@ static const string MAP_obsmsg = "OBSMSG";
 static const string MAP_connect = "MAPCO";
 static const string ROB_connect = "ROBCO";
 static const string ROB_msg = "ROBMSG";
-
+static const string END_connexion = "ENDCO";
 /* informations msgs*/
 
 static const string MAP_IP = "ip";
@@ -140,22 +140,28 @@ Monitor::Monitor() : Application("MAP"), _robot(nullptr)
     _moveDistance = new QSpinBox();
     _moveDistance->setSuffix(" cm");
     _moveDistance->setPrefix("move: ");
-    _moveDistance->setMinimum(1);
+    _moveDistance->setMinimum(-5000);
+    _moveDistance->setValue(0);
 
 
     _turnButton = new QPushButton("turn");
     _turnAngle = new QSpinBox();
     _turnAngle->setSuffix("°");
     _turnAngle->setPrefix("turn: ");
-    _turnAngle->setMinimum(1);
+    _turnAngle->setMinimum(-360);
+    _turnAngle->setValue(0);
     _turnAngle->setMaximum(360);
 
     _joinButton = new QPushButton("join");
     _xJoin = new QSpinBox();
+    _xJoin->setMinimum(-5000);
+    _xJoin->setValue(0);
     _xJoin->setSuffix(" cm");
     _xJoin->setPrefix("x: ");
 
     _yJoin = new QSpinBox();
+    _yJoin->setMinimum(-5000);
+    _yJoin->setValue(0);
     _yJoin->setSuffix(" cm");
     _yJoin->setPrefix("y: ");
 
@@ -236,6 +242,17 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                    _robot->setY(_YconnectedRobot*GRID_STEP);
                    _robot->setRotation(_robotAngle);
 
+
+                   string obstacles = APG_msg_splitstr(msg,ROB_obs);
+                   _obstacles = fromStringToVectorOfPairs(obstacles);
+                   for (auto obstacle : _obstacles)
+                   {
+                        double x = obstacle.first;
+                        double y = obstacle.second;
+                       _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                   }
+
+
                }
            }
     }
@@ -296,6 +313,11 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
 void Monitor::tryToConnect()
 {
+    //préviens déconnexion avec l'autre robot
+    string msg = APG_msg_createmsg(MAP_mnemotype, END_connexion);
+    APG_msg_addmsg(msg,MAP_IP,_myIp);
+    APG_msg_addmsg(msg,MAP_PORT,to_string(_myPort));
+    send(msg,"NET");
 
 
     if(!_local)
@@ -330,7 +352,7 @@ void Monitor::tryToConnect()
     //envoyer msg au robot souhaité pour lui dire qu'on souhaite se connecter : si en localhost alors la modification de l'adresse n'a aucun impact
     _adressToSend.setAddress(_ipAdress->text());
     _portToSend = _port->value();
-    string msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
+    msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
     APG_msg_addmsg(msg,MAP_IP,_myIp);
     APG_msg_addmsg(msg,MAP_PORT,to_string(_myPort));
     send(msg,"NET");
