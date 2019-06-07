@@ -21,6 +21,18 @@ float Pathfinder::heuristic(int x, int y) {
 // à 1.4, on prend la diagonale, et à 1 on prend le côté
 }
 
+float Pathfinder::heuristic2(const std::pair<float,float> &pos, const std::pair<float,float> &end) {
+    int newx = std::abs(pos.first-end.first);
+    int newy = std::abs(pos.second-end.second);
+    float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
+    float t2 = std::abs(newx-newy);
+    //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
+    return (std::max(newx,newy)-std::abs(newx-newy))*1.4+std::abs(newx-newy);
+// 1.4 ~= à sqrt(2), good enough pour heuristique
+// à 1.4, on prend la diagonale, et à 1 on prend le côté
+}
+
+
 void Pathfinder::mapToNodeMap(const std::list<std::pair<float, float> > &map) {
     std::set<std::pair<float,float>> test;
     for(auto point = map.begin(); point != map.end(); ++point) {
@@ -70,10 +82,14 @@ std::pair<float,float> Pathfinder::smallestFInOpenSet(const std::set<std::pair<f
 }
 
 void Pathfinder::goHome(const std::pair<float,float> &pos) {
+    findPath(pos, std::pair<float,float>(0,0));
+}
+
+void Pathfinder::findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest) {
     std::set<std::pair<float,float>> openSet, closedSet;
-    std::map<std::pair<float,float>,std::pair<float,float>> cameFrom;
+//  std::map<std::pair<float,float>,std::pair<float,float>> cameFrom;
     openSet.insert(pos);
-    _nodeMap.insert(std::pair<std::pair<float, float>, Node>(pos, Node(pos.first,pos.second,0,heuristic(pos.first,pos.second))));
+    _nodeMap.insert(std::pair<std::pair<float, float>, Node>(pos, Node(pos.first,pos.second,0,heuristic2(pos, dest))));
 
 //    for(auto point = _nodeMap.begin(); point != _nodeMap.end(); ++point) {
 // //        std::cout << "x : " << point->first.first << "y : " << point->first.second <<std::endl;
@@ -83,7 +99,7 @@ void Pathfinder::goHome(const std::pair<float,float> &pos) {
         auto shortest = smallestFInOpenSet(openSet);
         auto current = _nodeMap.find(shortest);
         std::cout << "Instigated point " << current->first.first << " " << current->first.second << std::endl;
-        if(current->first == std::pair<float,float>(0,0)) {
+        if(current->first == dest) {
             printf("I found a way :");
             std::list<std::pair<float,float>> daWae;
             //auto currentPoint = std::pair<float,float>(0,0);
@@ -117,7 +133,7 @@ void Pathfinder::goHome(const std::pair<float,float> &pos) {
                     }
                 } else {
                     openSet.insert(newCoord);
-                    it = _nodeMap.insert(std::pair<std::pair<float,float>,Node>(newCoord, Node(0,0,0,heuristic(newCoord.first, newCoord.second)))).first;
+                    it = _nodeMap.insert(std::pair<std::pair<float,float>,Node>(newCoord, Node(0,0,0,heuristic2(newCoord, dest)))).first;
                 }
                 it->second.parentX = current->first.first;
                 it->second.parentY = current->first.second;

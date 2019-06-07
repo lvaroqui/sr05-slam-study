@@ -33,12 +33,15 @@ class Pathfinder
 {
 private:
     std::map<std::pair<float,float>, Node> _nodeMap;
+public:
     float heuristic(int x, int y);
+    float heuristic2(const std::pair<float,float> &pos, const std::pair<float,float> &end);
 public:
     std::pair<float,float> smallestFInOpenSet(const std::set<std::pair<float, float> > &openSet) const;
 public:
     Pathfinder();
     void mapToNodeMap(const std::list<std::pair<float,float>> &map);
+    void findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest);
     void goHome(const std::pair<float, float> &pos);
 };
 
