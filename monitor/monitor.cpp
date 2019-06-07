@@ -292,8 +292,9 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
                 if(_robot == nullptr){
                     cout << "create robot" << endl;
-                    _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP,_YconnectedRobot*GRID_STEP,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                    _robot = _map->addRect(QRect(0,0,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
 		   _robot->setTransformOriginPoint(ROB_LENGTH/2, ROB_WIDTH/2);
+	           _robot->setRotation(_robotAngle);
                    _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
                    _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
                 }

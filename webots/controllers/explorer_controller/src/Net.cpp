@@ -15,13 +15,7 @@ void Net::run() {
             if (msg.getDestinationApp() == "NET") {
                 if (msg.getValue("typemsg") == "MAPCO") {
                     monitors_.emplace(msg.getValue("ip") + ":" + msg.getValue("port"), new UDPClient(msg.getValue("ip"), std::stoi(msg.getValue("port"))));
-                    AirplugMessage message("NET", "MAP", AirplugMessage::air);
-                    message.add("typemsg", "ROBCO");
-                    message.add("xpos", "0");
-                    message.add("ypos", "0");
-                    message.add("heading", "0");
-                    message.add("obs", "");
-                    monitors_[msg.getValue("ip") + ":" + msg.getValue("port")]->sendMessage(message.serialize());
+                    subscribers["EXP"]->push(msg);
                     std::cout << "New monitor at: " << msg.getValue("ip") << ":" << msg.getValue("port") << std::endl;
                 }
                 else if (msg.getValue("typemsg") == "ENDCO") {

@@ -18,6 +18,7 @@ set(SRCS
         src/com/RobOrd.cpp
         src/com/RobAck.cpp
         src/com/MailBox.cpp
+        src/utils.cpp
         )
 
 # Including WeBots

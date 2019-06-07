@@ -12,6 +12,8 @@
 #include <vector>
 #include <utility>
 #include <boost/algorithm/string/split.hpp>
+#include <math.h>
+#include "utils.h"
 
 
 class Exp {
@@ -20,6 +22,9 @@ class Exp {
     MailBox mailBox_;
     std::thread runner_;
 
+    int x = 0;
+    int y = 0;
+    int heading = 0;
 
     void run() {
         while (true) {
@@ -31,27 +36,54 @@ class Exp {
                     RobAck ra(msg.getValue("roback"));
                     if (ra.getType() == RobAck::joined || ra.getType() == RobAck::moved ||
                         ra.getType() == RobAck::turned) {
+
+                        // Getting robot position
                         std::vector<string> tmp;
                         boost::split(tmp, msg.getValue("robotpos"), [](char c) { return c == ','; });
-                        int x = std::stoi(tmp[0]);
-                        int y = std::stoi(tmp[1]);
-                        int heading = std::stoi(tmp[2]);
+                        x = std::stoi(tmp[0]);
+                        y = std::stoi(tmp[1]);
+                        heading = std::stoi(tmp[2]);
+
                         AirplugMessage ackMsg("ROB", "MAP", AirplugMessage::air);
-                        ackMsg.add("roback", "curr:" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
+                        ackMsg.add("roback", "curr:" + std::to_string(x) + "," + std::to_string(y) + "," +
+                                             std::to_string(heading));
+
+                        // If a collision is detected adding point to MAP
                         if (!msg.getValue("robcol").empty()) {
-                            ackMsg.add("obs", std::to_string(x) + "," + std::to_string(y));
-                        }
-                        else {
-                            ackMsg.add("obs", "");
+                            std::vector<std::pair<int, int>> points;
+                            int xWall = x + 14 * cos(heading * M_PI / 180);
+                            int yWall = y + 14 * sin(heading * M_PI / 180);
+                            for (int i = -10; i <= 10; i++) {
+                                std::pair<int, int> point(xWall + i * cos((heading + 90) * M_PI / 180),
+                                                          yWall + i * sin((heading + 90) * M_PI / 180));
+                                auto it = find(points.begin(), points.end(), point);
+                                if (it == points.end()) {
+                                    points.push_back(point);
+                                }
+                            }
+
+                            // Adding points to local map
+                            points_.reserve(points.size());
+                            points_.insert(points_.end(), points.begin(), points.end());
+                            sort(points_.begin(), points_.end());
+                            points_.erase(unique(points_.begin(), points_.end()), points_.end());
+
+                            ackMsg.add("obs", fromVectorOfPairsToString(points));
                         }
                         netMailBox_->push(ackMsg);
                     }
                 }
-                std::cout << "Map points are : " << std::endl;
-                for (auto point : points_) {
-                    std::cout << point.first << "," << point.second << std::endl;
+                else if (msg.getEmissionApp() == "MAP"){
+                    if (msg.getValue("typemsg") == "MAPCO") {
+                        AirplugMessage message("NET", "MAP", AirplugMessage::air);
+                        message.add("typemsg", "ROBCO");
+                        message.add("xpos", std::to_string(x));
+                        message.add("ypos", std::to_string(y));
+                        message.add("heading", std::to_string(heading));
+                        message.add("obs", fromVectorOfPairsToString(points_));
+                        netMailBox_->push(message);
+                    }
                 }
-                std::cout << std::endl;
             }
         }
     }
