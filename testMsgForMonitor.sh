@@ -15,7 +15,7 @@
 
 #TEST pour MAP
 
-echo "/LCH/NET/MAP/^typemsg~ROBCO^xpos~0^ypos~0^heading~40^obs~100,200 100,201 100,202^" > /dev/udp/127.0.0.1/65535
+echo "/LCH/NET/MAP/^typemsg~ROBCO^xpos~0^ypos~0^heading~0^obs~0,0 100,201 100,202^" > /dev/udp/127.0.0.1/65535
 
 echo "/LCH/ROB/MAP/^roback~curr:100,100,45^robcoll~1" > /dev/udp/127.0.0.1/65535
 

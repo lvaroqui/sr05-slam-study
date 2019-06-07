@@ -35,7 +35,7 @@ string fromVectorToString(std::vector<int> const& values)
     return vector;
 }
 
-std::string fromVectorOfPairsToString(std::vector<std::pair<double,double>> const& values )
+std::string fromVectorOfPairsToString(std::vector<std::pair<int,int>> const& values )
 {
     string vector;
     for(int i = 0;i<(int)values.size();i++)
@@ -45,20 +45,20 @@ std::string fromVectorOfPairsToString(std::vector<std::pair<double,double>> cons
     return vector;
 
 }
-std::vector<std::pair<double,double>> fromStringToVectorOfPairs(std::string const& value)
+std::vector<std::pair<int,int>> fromStringToVectorOfPairs(std::string const& value)
 {
     stringstream stream(value);
     string numbers;
-    vector<pair<double,double>> vectorCreated;
-    pair<double,double> tmp;
+    vector<pair<int,int>> vectorCreated;
+    pair<int,int> tmp;
 
     while (stream >> numbers)
     {
         int pos = numbers.find(',');
         string firstNumber = numbers.substr(0,pos);
         string secondNumber = numbers.substr(pos+1);
-        tmp.first = stod(firstNumber.c_str());
-        tmp.second = stod(secondNumber.c_str());
+        tmp.first = stoi(firstNumber.c_str());
+        tmp.second = stoi(secondNumber.c_str());
         vectorCreated.push_back(tmp);
     }
     return vectorCreated;

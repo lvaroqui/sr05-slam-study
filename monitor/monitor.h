@@ -28,7 +28,7 @@ class Monitor : public Application
 private:
     CustomQGraphicsScene* _map;
     QGraphicsView* _mapView;
-    std::vector<std::pair<double,double>> _obstacles;
+    std::vector<std::pair<int,int>> _obstacles;
     std::string _myIp;
     int _myPort;
     QCheckBox* _localhost;

@@ -238,18 +238,25 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
 
                     cout << "_robotAngle = " << _robotAngle << endl;
-                   _robot->setX(_XconnectedRobot*GRID_STEP);
-                   _robot->setY(_YconnectedRobot*GRID_STEP);
+                   _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
+                   _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
                    _robot->setRotation(_robotAngle);
 
 
                    string obstacles = APG_msg_splitstr(msg,ROB_obs);
-                   _obstacles = fromStringToVectorOfPairs(obstacles);
-                   for (auto obstacle : _obstacles)
+                   if(obstacles != APG_msg_unknown)
                    {
-                        double x = obstacle.first;
-                        double y = obstacle.second;
-                       _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                       std::vector<pair<int,int>> newObstacles = fromStringToVectorOfPairs(obstacles);
+                       for (auto obstacle : newObstacles)
+                       {
+                           _obstacles.push_back(obstacle);
+                            double x = obstacle.first;
+                            double y = obstacle.second;
+                           _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+
+
+
+                       }
                    }
 
 
@@ -272,6 +279,7 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
            if(type == ROB_connect)
            {
                 _map->clear();
+                _obstacles.clear();
                 _robot =nullptr;
                 cout << "CONNEXION EN COURS" << endl;
                 string xString = APG_msg_splitstr(msg,xpos);
@@ -285,13 +293,13 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
                 if(_robot == nullptr){
                     cout << "create robot" << endl;
-                    _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP + ROB_LENGTH/2,_YconnectedRobot*GRID_STEP + ROB_WIDTH/2,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                    _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2,_YconnectedRobot*GRID_STEP - ROB_WIDTH/2,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
                 }
                 else
                 {
                     cout << "modify robot" <<endl;
-                    _robot->setX(_XconnectedRobot);
-                    _robot->setY(_YconnectedRobot);
+                    _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
+                    _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
                 }
                 _robot->setRotation(_robotAngle);
 
