@@ -38,41 +38,9 @@ public:
 
     AirplugMessage(string emissionApp, string destinationApp, Type type)
             : emissionApp_(std::move(emissionApp)), destinationApp_(std::move(destinationApp)), type_(type) {
-
     }
 
-    explicit AirplugMessage(std::string message) {
-        std::vector<string> buffer;
-
-        // Getting Apps and Type
-        int pos = static_cast<int>(message.find('^'));
-        string tmp =  message.substr(0, pos);
-        message = message.substr(pos+1);
-
-        boost::split(buffer, tmp, [](char c) { return c == '$'; });
-
-        if (buffer[1] == "LCH") type_ = local;
-        else if (buffer[1] == "AIR") type_ = air;
-        else type_ = undefined;
-
-        emissionApp_ = buffer[2];
-        destinationApp_ = buffer[3];
-
-
-
-
-        // Getting Mnemonics/Values from message
-        buffer.clear();
-        boost::split(buffer, message, [](char c) { return c == '^'; });
-
-        // Adding the Mnemonics/Values to the map
-        for (const auto &elem : buffer) {
-            pos = static_cast<int>(elem.find('~'));
-            string mnemonic = elem.substr(0, pos);
-            string value = elem.substr(pos + 1);
-            container_[mnemonic] = value;
-        }
-    }
+    explicit AirplugMessage(std::string message);
 
     string getEmissionApp() {
         return emissionApp_;
@@ -82,11 +50,15 @@ public:
         return destinationApp_;
     }
 
+    void setDestinationApp(string destinationApp) {
+        destinationApp_ = destinationApp;
+    }
+
     Type getType() {
         return type_;
     }
 
-    string getValue(const string &mnemonic) {
+    const string getValue(const string &mnemonic) {
         return container_[mnemonic];
     }
 
@@ -98,26 +70,7 @@ public:
         container_.erase(mnemonic);
     }
 
-    string serialize() {
-        std::stringstream serialized;
-        serialized << "$";
-        switch (type_) {
-            case undefined:
-                serialized << "UND";
-                break;
-            case local:
-                serialized << "LCH";
-                break;
-            case air:
-                serialized << "AIR";
-                break;
-        }
-        serialized << "$" << emissionApp_ << "$" << destinationApp_ << "$";
-        for (auto &elem : container_) {
-            serialized << '^' << elem.first << '~' << elem.second;
-        }
-        return serialized.str();
-    }
+    string serialize();
 };
 
 

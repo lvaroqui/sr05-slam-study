@@ -4,7 +4,22 @@
 
 int main(int argc, char **argv) {
     // Create the Robot instance.
-    auto *robot = new Rob(std::stoi(argv[1]));
+
+    // Net
+    Net network(argv[1], 3000 + std::stoi(argv[1]));
+
+    // Exp
+    Exp explorer(network.getMailBox());
+
+    //Robot
+    Rob *robot = new Rob(network.getMailBox());
+
+
+    network.addSubscriber("ROB", robot->getMailBox());
+    network.addSubscriber("EXP", explorer.getMailBox());
+    network.launch();
+
+
     int timeStep = (int) robot->getBasicTimeStep();
 
     // Main Loop

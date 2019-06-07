@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include <utility>
+
 //
 // Created by luc on 17/05/19.
 //
@@ -21,12 +23,11 @@ class UDPClient {
     std::string ip_;
     int port_;
     udp::socket socket_;
-    udp::resolver resolver_;
     udp::endpoint endpoint_;
 
 public:
-    UDPClient(std::string ip, int port) : ip_(std::move(ip)), port_(std::move(port)), socket_(ioContext_), resolver_(ioContext_) {
-        endpoint_ = *resolver_.resolve(udp::v4(), ip_, std::to_string(port)).begin();
+    UDPClient(std::string ip, int port) : ip_(std::move(ip)), port_(port), socket_(ioContext_) {
+        endpoint_ = *udp::resolver(ioContext_).resolve(udp::v4(), ip_, std::to_string(port)).begin();
         socket_.open(udp::v4());
     }
 

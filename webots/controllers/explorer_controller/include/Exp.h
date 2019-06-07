@@ -11,9 +11,12 @@
 #include <thread>
 #include <vector>
 #include <utility>
+#include <boost/algorithm/string/split.hpp>
+
 
 class Exp {
     std::vector<std::pair<int, int>> points_;
+    MailBox *netMailBox_;
     MailBox mailBox_;
     std::thread runner_;
 
@@ -26,28 +29,22 @@ class Exp {
 
                 if (msg.getType() == AirplugMessage::local && msg.getEmissionApp() == "ROB") {
                     RobAck ra(msg.getValue("roback"));
-                    switch (ra.getType()) {
-                        case RobAck::undefinied:
-                            break;
-                        case RobAck::moved:
-                            break;
-                        case RobAck::turned:
-                            break;
-                        case RobAck::joined:
-                            if (!msg.getValue("robcol").empty()) {
-                                points_.emplace_back(ra.getCommand()[0], ra.getCommand()[1]);
-                            }
-                            break;
-                        case RobAck::lacc:
-                            break;
-                        case RobAck::init:
-                            break;
-                        case RobAck::curr:
-                            break;
-                        case RobAck::tuned:
-                            break;
-                        case RobAck::order:
-                            break;
+                    if (ra.getType() == RobAck::joined || ra.getType() == RobAck::moved ||
+                        ra.getType() == RobAck::turned) {
+                        std::vector<string> tmp;
+                        boost::split(tmp, msg.getValue("robotpos"), [](char c) { return c == ','; });
+                        int x = std::stoi(tmp[0]);
+                        int y = std::stoi(tmp[1]);
+                        int heading = std::stoi(tmp[2]);
+                        AirplugMessage ackMsg("ROB", "MAP", AirplugMessage::air);
+                        ackMsg.add("roback", "curr:" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
+                        if (!msg.getValue("robcol").empty()) {
+                            ackMsg.add("obs", std::to_string(x) + "," + std::to_string(y));
+                        }
+                        else {
+                            ackMsg.add("obs", "");
+                        }
+                        netMailBox_->push(ackMsg);
                     }
                 }
                 std::cout << "Map points are : " << std::endl;
@@ -60,7 +57,7 @@ class Exp {
     }
 
 public:
-    Exp() : runner_(&Exp::run, this) {
+    Exp(MailBox *netMailBox) : netMailBox_(netMailBox), runner_(&Exp::run, this) {
     }
 
     MailBox *getMailBox() {

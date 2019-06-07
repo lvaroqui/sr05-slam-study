@@ -81,6 +81,10 @@ public:
         return msg;
     }
 
+    static void addRobotPosMsg(AirplugMessage &msg, int x, int y, int heading) {
+        msg.add("robotpos", std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
+    }
+
     static AirplugMessage initMsg(int x, int y, int heading) {
         AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
         msg.add("roback", "init:" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
