@@ -27,8 +27,8 @@
 #include <utils.h>
 
 #define GRID_STEP 5
-#define ROB_LENGTH 25.4 * 5
-#define ROB_WIDTH 15.24 * 5
+#define ROB_LENGTH 21.19 * 5
+#define ROB_WIDTH  21.19 * 5
 
 using namespace std;
 
@@ -238,10 +238,9 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
 
                     cout << "_robotAngle = " << _robotAngle << endl;
+                   _robot->setRotation(_robotAngle);
                    _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
                    _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
-                   _robot->setRotation(_robotAngle);
-
 
                    string obstacles = APG_msg_splitstr(msg,ROB_obs);
                    if(obstacles != APG_msg_unknown)
@@ -293,15 +292,19 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
                 if(_robot == nullptr){
                     cout << "create robot" << endl;
-                    _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2,_YconnectedRobot*GRID_STEP - ROB_WIDTH/2,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                    _robot = _map->addRect(QRect(_XconnectedRobot*GRID_STEP,_YconnectedRobot*GRID_STEP,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+		   _robot->setTransformOriginPoint(ROB_LENGTH/2, ROB_WIDTH/2);
+                   _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
+                   _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
                 }
                 else
                 {
                     cout << "modify robot" <<endl;
-                    _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
-                    _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
+	            _robot->setRotation(_robotAngle);
+                   _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
+                   _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
                 }
-                _robot->setRotation(_robotAngle);
+
 
                 string obstacles = APG_msg_splitstr(msg,ROB_obs);
                 _obstacles = fromStringToVectorOfPairs(obstacles);
