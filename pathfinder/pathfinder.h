@@ -6,9 +6,10 @@
 #include <map>
 #include <set>
 
-#define ROBOT_LENGTH 26
-#define ROBOT_WIDTH 16
-
+#ifndef ROBOT_LENGTH
+#define ROBOT_LENGTH 1
+#define ROBOT_WIDTH 1
+#endif
 
 struct Node
 {
@@ -33,16 +34,16 @@ class Pathfinder
 {
 private:
     std::map<std::pair<float,float>, Node> _nodeMap;
-public:
-    float heuristic(int x, int y);
-    float heuristic2(const std::pair<float,float> &pos, const std::pair<float,float> &end);
-public:
+    std::map<std::pair<float,float>,float> _cacheHeuristic;
+    float calculateHeuristic(const std::pair<float, float> &pos, const std::pair<float, float> &end);
+    float heavyHeuristic(const std::pair<float, float> &pos, const std::pair<float, float> &end);
+    float heuristic(const std::pair<float,float> &pos, const std::pair<float,float> &end);
     std::pair<float,float> smallestFInOpenSet(const std::set<std::pair<float, float> > &openSet) const;
 public:
     Pathfinder();
     void mapToNodeMap(const std::list<std::pair<float,float>> &map);
-    void findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest);
-    void goHome(const std::pair<float, float> &pos);
+    std::list<std::pair<float, float>> findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest);
+    std::list<std::pair<float, float>> goHome(const std::pair<float, float> &pos);
 };
 
 #endif // PATHFINDER_H

@@ -9,25 +9,51 @@ Pathfinder::Pathfinder()
 
 }
 
-float Pathfinder::heuristic(int x, int y) {
-// On suppose l'arrivée à 0,0
-    int newx = std::abs(x);
-    int newy = std::abs(y);
-    float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
-    float t2 = std::abs(newx-newy);
-    //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
-    return (std::max(newx,newy)-std::abs(newx-newy))*1.4+std::abs(newx-newy);
-// 1.4 ~= à sqrt(2), good enough pour heuristique
-// à 1.4, on prend la diagonale, et à 1 on prend le côté
-}
-
-float Pathfinder::heuristic2(const std::pair<float,float> &pos, const std::pair<float,float> &end) {
+float Pathfinder::calculateHeuristic(const std::pair<float, float> &pos, const std::pair<float, float> &end) {
     int newx = std::abs(pos.first-end.first);
     int newy = std::abs(pos.second-end.second);
     float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
     float t2 = std::abs(newx-newy);
     //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
     return (std::max(newx,newy)-std::abs(newx-newy))*1.4+std::abs(newx-newy);
+}
+
+float Pathfinder::heavyHeuristic(const std::pair<float,float> &pos, const std::pair<float,float> &end) {
+// On suppose l'arrivée à 0,0
+    //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
+    //std::cout << "passing by heavy";
+    auto itcache = _cacheHeuristic.find(pos);
+    if(itcache != _cacheHeuristic.end()) {
+        return itcache->second;
+    }
+    std::map<std::pair<float,float>, Node>::iterator it;
+    for(int i = -ROBOT_LENGTH/2; i<float(ROBOT_LENGTH)/2;i++) {
+        for(int j = -ROBOT_LENGTH/2; j<float(ROBOT_LENGTH)/2;j++) {
+            auto newCoord = std::pair<float,float>(pos.first+i,pos.second+j);
+            //std::cout << newCoord.first << newCoord.second << std::endl;
+            it = _nodeMap.find(newCoord);
+            if(it != _nodeMap.end() && it->second.hCost == FLT_MAX) {
+                std::cout << "Cache : "<< pos.first << pos.second << std::endl;
+                _cacheHeuristic.insert(std::pair<std::pair<float,float>,float>(pos, FLT_MAX));
+                return FLT_MAX;
+            }
+        }
+    }
+    return calculateHeuristic(pos, end);
+// 1.4 ~= à sqrt(2), good enough pour heuristique
+// à 1.4, on prend la diagonale, et à 1 on prend le côté
+}
+
+float Pathfinder::heuristic(const std::pair<float,float> &pos, const std::pair<float,float> &end) {
+    if(ROBOT_LENGTH != 1 || ROBOT_WIDTH != 1) {
+        return heavyHeuristic(pos,end);
+    }
+    int newx = std::abs(pos.first-end.first);
+    int newy = std::abs(pos.second-end.second);
+    float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
+    float t2 = std::abs(newx-newy);
+    //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
+    return calculateHeuristic(pos,end);
 // 1.4 ~= à sqrt(2), good enough pour heuristique
 // à 1.4, on prend la diagonale, et à 1 on prend le côté
 }
@@ -81,15 +107,15 @@ std::pair<float,float> Pathfinder::smallestFInOpenSet(const std::set<std::pair<f
     return min->first;
 }
 
-void Pathfinder::goHome(const std::pair<float,float> &pos) {
-    findPath(pos, std::pair<float,float>(0,0));
+std::list<std::pair<float, float>> Pathfinder::goHome(const std::pair<float,float> &pos) {
+    return findPath(pos, std::pair<float,float>(0,0));
 }
 
-void Pathfinder::findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest) {
+std::list<std::pair<float, float>> Pathfinder::findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest) {
     std::set<std::pair<float,float>> openSet, closedSet;
 //  std::map<std::pair<float,float>,std::pair<float,float>> cameFrom;
     openSet.insert(pos);
-    _nodeMap.insert(std::pair<std::pair<float, float>, Node>(pos, Node(pos.first,pos.second,0,heuristic2(pos, dest))));
+    _nodeMap.insert(std::pair<std::pair<float, float>, Node>(pos, Node(pos.first,pos.second,0,heuristic(pos, dest))));
 
 //    for(auto point = _nodeMap.begin(); point != _nodeMap.end(); ++point) {
 // //        std::cout << "x : " << point->first.first << "y : " << point->first.second <<std::endl;
@@ -115,7 +141,7 @@ void Pathfinder::findPath(const std::pair<float, float> &pos, const std::pair<fl
                 std::cout << ":" << point->first << "," << point->second << ":" /*<< std::endl*/;
             }
             std::cout << std::endl;
-            return;
+            return daWae;
         }
         openSet.erase(shortest);
         closedSet.insert(shortest);
@@ -132,8 +158,13 @@ void Pathfinder::findPath(const std::pair<float, float> &pos, const std::pair<fl
                         continue;
                     }
                 } else {
+                    float heur = heuristic(newCoord, dest);
+                    //std::cout << heur << std::endl;
+                    if(heur == FLT_MAX) {
+                        continue;
+                    }
                     openSet.insert(newCoord);
-                    it = _nodeMap.insert(std::pair<std::pair<float,float>,Node>(newCoord, Node(0,0,0,heuristic2(newCoord, dest)))).first;
+                    it = _nodeMap.insert(std::pair<std::pair<float,float>,Node>(newCoord, Node(0,0,0,heur))).first;
                 }
                 it->second.parentX = current->first.first;
                 it->second.parentY = current->first.second;
@@ -141,4 +172,5 @@ void Pathfinder::findPath(const std::pair<float, float> &pos, const std::pair<fl
             }
         }
     }
+    return std::list<std::pair<float,float>>();
 }
