@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     Net network(argv[1], 3000 + std::stoi(argv[1]));
 
     // Exp
-    Exp explorer(network.getMailBox());
+    Exp explorer(argv[1], network.getMailBox());
 
     // Robot
     Rob *robot = new Rob(network.getMailBox(), network.getAirInMailBox());
@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
     network.addSubscriber("EXP", explorer.getMailBox());
     network.launch();
 
-
     int timeStep = (int) robot->getBasicTimeStep();
 
     // Main Loop
@@ -29,6 +28,7 @@ int main(int argc, char **argv) {
     }
 
     // Cleaning up
+    std::cout << "Clean Up" << std::endl;
     delete robot;
     return 0;
 }

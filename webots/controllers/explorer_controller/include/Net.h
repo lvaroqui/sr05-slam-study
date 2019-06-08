@@ -17,6 +17,8 @@
 class Net {
     UDPServer udpServer_;
 
+    bool run_ = true;
+
     std::string id_;
 
     std::map<string, UDPClient *> monitors_;
@@ -34,6 +36,12 @@ class Net {
 public:
     explicit Net(std::string id, int comPort) : id_(std::move(id)), udpServer_(comPort) {
         std::cout << "NET initialized for robot " << id_ << " at port " << comPort << std::endl;
+    }
+
+    ~Net() {
+        run_ = false;
+        runner_.join();
+        std::cout << "Net " << id_ << " shutdown";
     }
 
     MailBox *getMailBox() {

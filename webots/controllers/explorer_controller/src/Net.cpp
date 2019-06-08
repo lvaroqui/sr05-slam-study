@@ -2,10 +2,11 @@
 // Created by luc on 21/05/19.
 //
 
+#include <com/RobAck.h>
 #include "Net.h"
 
 void Net::run() {
-    while (true) {
+    while (run_) {
         if (udpServer_.getNumberOfMessages() > 0) {
             AirplugMessage msg(udpServer_.popMessage());
             std::cout << "NET " << id_ << ": Received this message from UDP: " << msg.serialize() << std::endl;
@@ -27,7 +28,9 @@ void Net::run() {
         }
         while (lchMailBox_.size() > 0) {
             AirplugMessage msg = lchMailBox_.pop();
-            std::cout << id_ << ": Received this message from LCH: " << msg.serialize() << std::endl;
+            if (msg.getEmissionApp() != "ROB" || RobAck(msg.getValue("roback")).getType() != RobAck::curr)
+                std::cout << id_ << ": Received this message from LCH: " << msg.serialize() << std::endl;
+
             // Handling messages from monitoring app
             if (msg.getDestinationApp() == "MAP") {
                 for (auto monitor : monitors_) {

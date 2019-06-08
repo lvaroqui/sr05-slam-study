@@ -1,3 +1,5 @@
+#include <utility>
+
 //
 // Created by luc on 03/06/19.
 //
@@ -17,6 +19,9 @@
 #include <chrono>
 
 class Exp {
+    bool run_ = true;
+    string id_;
+
     std::vector<std::pair<int, int>> points_;
     MailBox *netMailBox_;
     MailBox mailBox_;
@@ -31,7 +36,7 @@ class Exp {
     void handleExpMessage(AirplugMessage msg);
 
     void run() {
-        while (true) {
+        while (run_) {
             while (mailBox_.size() > 0) {
                 AirplugMessage msg = mailBox_.pop();
                 // Handle local messages from ROB (acknowledgments and collisions)
@@ -58,7 +63,13 @@ class Exp {
     }
 
 public:
-    Exp(MailBox *netMailBox) : netMailBox_(netMailBox), runner_(&Exp::run, this) {
+    Exp(string id, MailBox *netMailBox) : id_(std::move(id)), netMailBox_(netMailBox), runner_(&Exp::run, this) {
+    }
+
+    ~Exp() {
+        run_ = false;
+        runner_.join();
+        std::cout << "Exp shutdown";
     }
 
     MailBox *getMailBox() {
