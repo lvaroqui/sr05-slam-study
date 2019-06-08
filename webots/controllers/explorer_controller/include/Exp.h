@@ -22,9 +22,9 @@ class Exp {
     MailBox mailBox_;
     std::thread runner_;
 
-    int x = 0;
-    int y = 0;
-    int heading = 0;
+    int x_ = 0;
+    int y_ = 0;
+    int heading_ = 0;
 
     void addPoints(std::vector<std::pair<int, int>> points);
     void handleRobMessage(AirplugMessage msg);
@@ -45,9 +45,9 @@ class Exp {
                     if (msg.getValue("typemsg") == "MAPCO") {
                         AirplugMessage message("NET", "MAP", AirplugMessage::air);
                         message.add("typemsg", "ROBCO");
-                        message.add("xpos", std::to_string(x));
-                        message.add("ypos", std::to_string(y));
-                        message.add("heading", std::to_string(heading));
+                        message.add("xpos", std::to_string(x_));
+                        message.add("ypos", std::to_string(y_));
+                        message.add("heading", std::to_string(heading_));
                         message.add("obs", fromVectorOfPairsToString(points_));
                         netMailBox_->push(message);
                     }

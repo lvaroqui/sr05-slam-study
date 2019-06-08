@@ -12,22 +12,22 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         // Getting robot position
         std::vector<string> tmp;
         boost::split(tmp, msg.getValue("robotpos"), [](char c) { return c == ','; });
-        x = std::stoi(tmp[0]);
-        y = std::stoi(tmp[1]);
-        heading = std::stoi(tmp[2]);
+        x_ = std::stoi(tmp[0]);
+        y_ = std::stoi(tmp[1]);
+        heading_ = std::stoi(tmp[2]);
 
         AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
-        mapMessage.add("roback", "curr:" + std::to_string(x) + "," + std::to_string(y) + "," +
-                                 std::to_string(heading));
+        mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                 std::to_string(heading_));
 
         // If a collision is detected
         if (!msg.getValue("robcol").empty()) {
             std::vector<std::pair<int, int>> points;
-            int xWall = x + 14 * cos(heading * M_PI / 180);
-            int yWall = y + 14 * sin(heading * M_PI / 180);
+            int xWall = x_ + 14 * cos(heading_ * M_PI / 180);
+            int yWall = y_ + 14 * sin(heading_ * M_PI / 180);
             for (int i = -10; i <= 10; i++) {
-                std::pair<int, int> point(xWall + i * cos((heading + 90) * M_PI / 180),
-                                          yWall + i * sin((heading + 90) * M_PI / 180));
+                std::pair<int, int> point(xWall + i * cos((heading_ + 90) * M_PI / 180),
+                                          yWall + i * sin((heading_ + 90) * M_PI / 180));
                 auto it = find(points.begin(), points.end(), point);
                 if (it == points.end()) {
                     points.push_back(point);
@@ -40,12 +40,17 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             mapMessage.add("obs", fromVectorOfPairsToString(points));
             AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
             expMessage.add("typemsg", "collisionDetection");
-            expMessage.add("currentpos", std::to_string(x) + "," + std::to_string(y) + "," +
-                                         std::to_string(heading));
+            expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                         std::to_string(heading_));
             expMessage.add("obs", fromVectorOfPairsToString(points));
             netMailBox_->push(expMessage);
         }
         netMailBox_->push(mapMessage);
+    }
+    else if (ra.getType() == RobAck::curr) {
+        x_ = ra.getCommand()[0];
+        y_ = ra.getCommand()[1];
+        heading_ = ra.getCommand()[2];
     }
 }
 

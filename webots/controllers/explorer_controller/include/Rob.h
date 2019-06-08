@@ -91,7 +91,6 @@ public:
                                         rightWheelMotor_(getMotor("right wheel motor")),
                                         leftPositionSensor_(getPositionSensor("left wheel sensor")),
                                         rightPositionSensor_(getPositionSensor("right wheel sensor")) {
-
         frontDistanceSensors_.push_back(getDistanceSensor("ds0"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds1"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds2"));
@@ -111,6 +110,9 @@ public:
         leftWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
         rightWheelMotor_->setVelocity(0);
         leftWheelMotor_->setVelocity(0);
+        auto position = self_->getPosition();
+        x_ = position[1];
+        y_ = position[0];
     }
 
 private:
@@ -222,7 +224,7 @@ public:
 
         //  If robot is executing a rotating order
         if (rotating_) {
-            // Checking if we reached the desired heading
+            // Checking if we reached the desired heading_
             if (abs(targetHeading_ - heading_) < 0.001) {
                 // If we are in a joining operation we then go to the translating part
                 if (joining_) {
@@ -287,6 +289,12 @@ public:
         }
 
         // Com
+        static int i = 30;
+        if (i++ == 30) {
+            netMailBox_->push(RobAck::currMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
+                                        static_cast<int>(heading_ * 180.0 / M_PI)));
+            i = 0;
+        }
         handleInterRobotCommunications();
         handleMessages();
 

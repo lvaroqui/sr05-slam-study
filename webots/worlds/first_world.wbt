@@ -3,7 +3,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.09881158857109952 0.9282125923604526 0.35868879735439746 2.5997144389944946
-  position 1.2208756153714577 2.187494787392607 -1.8257215841737688
+  position 2.0899616097103317 3.318430236279513 -3.0205674130511326
 }
 TexturedBackground {
 }
@@ -16,6 +16,7 @@ Pioneer2 {
   name "1"
   controller "explorer_controller"
   controllerArgs "1"
+  supervisor TRUE
   extensionSlot [
     Receiver {
     }
@@ -24,10 +25,11 @@ Pioneer2 {
   ]
 }
 Pioneer2 {
-  translation -0.8100000000000002 0 0.1
+  translation -1 0 0
   name "3"
   controller "explorer_controller"
   controllerArgs "3"
+  supervisor TRUE
   color 0.20392156862745098 0.396078431372549 0.6431372549019608
   extensionSlot [
     Receiver {
@@ -37,10 +39,11 @@ Pioneer2 {
   ]
 }
 Pioneer2 {
-  translation 0.7000000000000004 0 0.1
+  translation 1 0 0
   name "2"
   controller "explorer_controller"
   controllerArgs "2"
+  supervisor TRUE
   color 0.45098039215686275 0.8235294117647058 0.08627450980392157
   extensionSlot [
     Receiver {

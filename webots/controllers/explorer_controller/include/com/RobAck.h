@@ -48,7 +48,7 @@ public:
         if (type_ == moved || type_ == turned) {
             command_.push_back(stoi(param));
         }
-        else if (type_ == tuned || type_ == init || type_ == joined) {
+        else if (type_ == tuned || type_ == init || type_ == joined || type_ == curr) {
             std::vector<string> tmp;
             boost::split(tmp, param, [](char c) { return c == ','; });
             for (auto &elem : tmp) {
