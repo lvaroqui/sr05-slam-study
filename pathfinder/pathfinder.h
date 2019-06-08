@@ -41,6 +41,7 @@ private:
     std::pair<float,float> smallestFInOpenSet(const std::set<std::pair<float, float> > &openSet) const;
 public:
     Pathfinder();
+    void resetMap();
     void mapToNodeMap(const std::list<std::pair<float,float>> &map);
     std::list<std::pair<float, float>> findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest);
     std::list<std::pair<float, float>> goHome(const std::pair<float, float> &pos);

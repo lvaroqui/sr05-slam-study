@@ -174,3 +174,7 @@ std::list<std::pair<float, float>> Pathfinder::findPath(const std::pair<float, f
     }
     return std::list<std::pair<float,float>>();
 }
+
+void Pathfinder::resetMap() {
+    _nodeMap.clear();
+}
