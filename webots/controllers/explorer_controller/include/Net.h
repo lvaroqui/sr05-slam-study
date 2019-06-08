@@ -17,27 +17,36 @@
 class Net {
     UDPServer udpServer_;
 
-    std::string nodeName_;
+    std::string id_;
 
     std::map<string, UDPClient *> monitors_;
 
     std::thread runner_;
 
-    MailBox mailBox_;
+    MailBox lchMailBox_;
+    MailBox airInMailBox_;
+    MailBox *airOutMailBox_ = nullptr;
 
     std::map<string, MailBox *> subscribers;
 
     void run();
 
 public:
-    explicit Net(std::string name, int comPort) : nodeName_(std::move(name)), udpServer_(comPort) {
-        std::cout << comPort << std::endl;
+    explicit Net(std::string id, int comPort) : id_(std::move(id)), udpServer_(comPort) {
+        std::cout << "NET initialized for robot " << id_ << " at port " << comPort << std::endl;
     }
 
     MailBox *getMailBox() {
-        return &mailBox_;
+        return &lchMailBox_;
     }
 
+    MailBox *getAirInMailBox() {
+        return &airInMailBox_;
+    }
+
+    void addAirOutMailBox(MailBox *airOutMailBox) {
+        airOutMailBox_ = airOutMailBox;
+    }
 
     void addSubscriber(const string &appName, MailBox *mailBox) {
         subscribers[appName] = mailBox;

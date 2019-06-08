@@ -23,6 +23,7 @@ string AirplugMessage::serialize() {
         elem.second.erase(std::remove(elem.second.begin(), elem.second.end(), '\n'), elem.second.end());
         serialized << '^' << elem.first << '~' << elem.second;
     }
+    serialized << "^";
     return serialized.str();
 }
 
@@ -31,8 +32,8 @@ AirplugMessage::AirplugMessage(std::string message) {
 
     // Getting Apps and Type
     int pos = static_cast<int>(message.find('^'));
-    string tmp =  message.substr(0, pos);
-    message = message.substr(pos+1);
+    string tmp = message.substr(0, pos);
+    message = message.substr(pos + 1);
 
     boost::split(buffer, tmp, [](char c) { return c == '$'; });
 
@@ -51,7 +52,9 @@ AirplugMessage::AirplugMessage(std::string message) {
     for (const auto &elem : buffer) {
         pos = static_cast<int>(elem.find('~'));
         string mnemonic = elem.substr(0, pos);
-        string value = elem.substr(pos + 1);
-        container_[mnemonic] = value;
+        if (!mnemonic.empty()) {
+            string value = elem.substr(pos + 1);
+            container_[mnemonic] = value;
+        }
     }
 }

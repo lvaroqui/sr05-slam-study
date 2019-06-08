@@ -11,10 +11,11 @@ int main(int argc, char **argv) {
     // Exp
     Exp explorer(network.getMailBox());
 
-    //Robot
-    Rob *robot = new Rob(network.getMailBox());
+    // Robot
+    Rob *robot = new Rob(network.getMailBox(), network.getAirInMailBox());
 
-
+    // Configure Network
+    network.addAirOutMailBox(robot->getAirOutMailBox());
     network.addSubscriber("ROB", robot->getMailBox());
     network.addSubscriber("EXP", explorer.getMailBox());
     network.launch();

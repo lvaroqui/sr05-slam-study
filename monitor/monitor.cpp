@@ -355,7 +355,6 @@ void Monitor::tryToConnect()
     else
         info += _ipAdress->text().toStdString();
 
-
     info += " on port ";
     info += to_string(_portToSend);
 
@@ -364,10 +363,10 @@ void Monitor::tryToConnect()
     //envoyer msg au robot souhaité pour lui dire qu'on souhaite se connecter : si en localhost alors la modification de l'adresse n'a aucun impact
     _adressToSend.setAddress(_ipAdress->text());
     _portToSend = _port->value();
-    msg = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
-    APG_msg_addmsg(msg,MAP_IP,_myIp);
-    APG_msg_addmsg(msg,MAP_PORT,to_string(_myPort));
-    send(msg,"NET");
+    string msgCo = APG_msg_createmsg(MAP_mnemotype,MAP_connect);
+    APG_msg_addmsg(msgCo,MAP_IP,_myIp);
+    APG_msg_addmsg(msgCo,MAP_PORT,to_string(_myPort));
+    send(msgCo,"NET");
 
 }
 

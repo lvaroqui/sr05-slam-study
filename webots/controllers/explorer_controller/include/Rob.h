@@ -10,6 +10,8 @@
 #include <webots/Motor.hpp>
 #include <webots/PositionSensor.hpp>
 #include <webots/Node.hpp>
+#include <webots/Emitter.hpp>
+#include <webots/Receiver.hpp>
 
 #include <iostream>
 #include <limits>
@@ -32,6 +34,8 @@ class Rob : public Supervisor {
 
     //MailBox
     MailBox *netMailBox_;
+    MailBox *airInMailBox_;
+    MailBox airOutMailBox_;
     MailBox mailBox_;
 
     // Robot motors and sensors
@@ -39,6 +43,8 @@ class Rob : public Supervisor {
     Motor *rightWheelMotor_;
     PositionSensor *leftPositionSensor_;
     PositionSensor *rightPositionSensor_;
+    Emitter *emitter_;
+    Receiver *receiver_;
 
     std::vector<DistanceSensor *> frontDistanceSensors_;
     // Current position
@@ -75,13 +81,17 @@ class Rob : public Supervisor {
 
 public:
     /// Constructor for the Explorer
-    explicit Rob(MailBox *netMailBox) : Supervisor(),
+    explicit Rob(MailBox *netMailBox, MailBox *airInMailBox) : Supervisor(),
                                         self_(this->getSelf()),
                                         netMailBox_(netMailBox),
+                                        airInMailBox_(airInMailBox),
+                                        emitter_(getEmitter("emitter")),
+                                        receiver_(getReceiver("receiver")),
                                         leftWheelMotor_(getMotor("left wheel motor")),
                                         rightWheelMotor_(getMotor("right wheel motor")),
                                         leftPositionSensor_(getPositionSensor("left wheel sensor")),
                                         rightPositionSensor_(getPositionSensor("right wheel sensor")) {
+
         frontDistanceSensors_.push_back(getDistanceSensor("ds0"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds1"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds2"));
@@ -95,6 +105,7 @@ public:
 
         leftPositionSensor_->enable((int) getBasicTimeStep());
         rightPositionSensor_->enable((int) getBasicTimeStep());
+        receiver_->enable((int) getBasicTimeStep());
 
         rightWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
         leftWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
@@ -165,42 +176,28 @@ private:
     }
 
     /// Handles incoming messages
-    void handleMessages() {
-        while (mailBox_.size() > 0) {
-            RobOrd robord(mailBox_.pop().getValue("robord"));
-            switch (robord.getType()) {
-                case RobOrd::Type::move :
-                    translate(static_cast<double>(robord.getCommand()[0]) / 100.0);
-                    break;
-                case RobOrd::Type::turn :
-                    rotate(static_cast<double>(robord.getCommand()[0]) * M_PI / 180.0);
-                    break;
-                case RobOrd::tune:
-                    break;
-                case RobOrd::lacc:
-                    break;
-                case RobOrd::init:
-                    x_ = static_cast<double>(robord.getCommand()[0]) / 100.0;
-                    y_ = static_cast<double>(robord.getCommand()[1]) / 100.0;
-                    heading_ = static_cast<double>(robord.getCommand()[2]) * M_PI / 180.0;
-                    break;
-                case RobOrd::curr:
-                    netMailBox_->push(RobAck::currMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
-                                                      static_cast<int>(heading_ * 180.0 / M_PI)));
-                    break;
-                case RobOrd::join:
-                    join(static_cast<double>(robord.getCommand()[0]) / 100.0,
-                         static_cast<double>(robord.getCommand()[1]) / 100.0);
-                    break;
-                case RobOrd::undefined:
-                    break;
-            }
+    void handleMessages();
+
+    void handleInterRobotCommunications() {
+        while(receiver_->getQueueLength() > 0) {
+            const char * messageRaw = (const char *)receiver_->getData();
+            AirplugMessage message((string(messageRaw)));
+            airInMailBox_->push(message);
+            receiver_->nextPacket();
+        }
+        if (airOutMailBox_.size() > 0) {
+            string message = airOutMailBox_.pop().serialize();
+            emitter_->send(message.c_str(), message.length() + 1);
         }
     }
 
 public:
     MailBox *getMailBox() {
         return &mailBox_;
+    }
+
+    MailBox *getAirOutMailBox() {
+        return &airOutMailBox_;
     }
 
     /// Called every tick
@@ -290,6 +287,7 @@ public:
         }
 
         // Com
+        handleInterRobotCommunications();
         handleMessages();
 
         // Update previous sensor values

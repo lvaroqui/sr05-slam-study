@@ -5,3 +5,5 @@ webots/controllers/explorer_controller/explorer_controller
 webots/controllers/explorer_controller/cmake-build-debug/
 
 monitor/monitor
+
+build-monitor-Desktop_Qt_5_12_3_GCC_64bit-Debug/
