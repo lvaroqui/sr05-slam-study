@@ -6,6 +6,8 @@
 
 void Exp::handleRobMessage(AirplugMessage msg) {
     RobAck ra(msg.getValue("roback"));
+
+    // Handling movement ack messages
     if (ra.getType() == RobAck::joined || ra.getType() == RobAck::moved ||
         ra.getType() == RobAck::turned) {
 
@@ -16,6 +18,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         y_ = std::stoi(tmp[1]);
         heading_ = std::stoi(tmp[2]);
 
+        // Preparing message for monitor APP
         AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
         mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
                                  std::to_string(heading_));
@@ -23,8 +26,12 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         // If a collision is detected
         if (!msg.getValue("robcol").empty()) {
             std::vector<std::pair<int, int>> points;
+
+            // Main contact point
             int xWall = x_ + 14 * cos(heading_ * M_PI / 180);
             int yWall = y_ + 14 * sin(heading_ * M_PI / 180);
+
+            // Calculating points adjacent to the contact main point
             for (int i = -10; i <= 10; i++) {
                 std::pair<int, int> point(xWall + i * cos((heading_ + 90) * M_PI / 180),
                                           yWall + i * sin((heading_ + 90) * M_PI / 180));
@@ -34,12 +41,16 @@ void Exp::handleRobMessage(AirplugMessage msg) {
                 }
             }
 
+            // Adding wall to map
             for (auto point : points) {
                 map_[point] = pointType::wall;
                 unsentMap_[point] = pointType::wall;
             }
 
+            // Sending observations to monitoring APP
             mapMessage.add("obs", fromMapToString(unsentMap_));
+
+            // Preparing message for other robots
             AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
             expMessage.add("typemsg", "collisionDetection");
             expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
@@ -48,6 +59,8 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             netMailBox_->push(expMessage);
         }
         netMailBox_->push(mapMessage);
+
+        // No more pending messages, we clear the temporary Map
         unsentMap_.clear();
     }
     else if (ra.getType() == RobAck::curr) {
@@ -62,6 +75,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             auto passedBy = getPointsBetween(x_, y_, previousX, previousY);
 
             for (auto passedPoint : passedBy) {
+                std::cout << passedPoint.first << " " << passedPoint.second << std::endl;
                 for (int i = -10; i <= 10; i++) {
                     std::pair<int, int> point(passedPoint.first + i * cos((heading_ + 90) * M_PI / 180),
                                               passedPoint.second + i * sin((heading_ + 90) * M_PI / 180));
@@ -122,9 +136,8 @@ std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, i
         }
         double a = (double) (y2 - y1) / (double) (x2 - x1);
         double b = y1 - a * x1;
-
         for (int i = x1; i <= x2; i++) {
-            points.emplace_back(i, (int) (a * i + b));
+            points.emplace_back(i, round(a * i + b));
         }
 
     }

@@ -1,7 +1,6 @@
 #include "Rob.h"
 #include <iostream>
 
-
 int main(int argc, char **argv) {
     // Create the Robot instance.
 
@@ -24,11 +23,11 @@ int main(int argc, char **argv) {
 
     // Main Loop
     while (robot->step(timeStep) != -1) {
-        robot->run();
-    }
+       robot->run();
+   }
 
     // Cleaning up
-    std::cout << "Clean Up" << std::endl;
+    std::cout << "Cleaning Up" << std::endl;
     delete robot;
     return 0;
 }

@@ -235,30 +235,29 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                    _YconnectedRobot = ackVal.getCommand()[1];
                    _robotAngle = ackVal.getCommand()[2];
 
-
-
-                    cout << "_robotAngle = " << _robotAngle << endl;
-                   _robot->setRotation(_robotAngle);
-                   _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
-                   _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
-
-                   string obstacles = APG_msg_splitstr(msg,ROB_obs);
-                   if(obstacles != APG_msg_unknown)
+                   string mapRob = APG_msg_splitstr(msg,ROB_obs);
+                   if(mapRob != APG_msg_unknown)
                    {
-                       std::vector<pair<int,int>> newObstacles = fromStringToVectorOfPairs(obstacles);
-                       for (auto obstacle : newObstacles)
+                       Map newPoints = fromStringToMap(mapRob);
+                       for (auto point : newPoints)
                        {
-                           _obstacles.push_back(obstacle);
-                            double x = obstacle.first;
-                            double y = obstacle.second;
-                           _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
-
-
-
+                           double x = point.first.first;
+                           double y = point.first.second;
+                           if (point.second == pointType::wall) {
+                               _obstacles.push_back(point.first);
+                               _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                           }
+                           else if (point.second == pointType::explored) {
+                               _explored.push_back(point.first);
+                                _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,100,0)),QBrush(QColor(0,100,0))); //draw explored
+                           }
                        }
                    }
 
-
+                   cout << "_robotAngle = " << _robotAngle << endl;
+                  _robot->setRotation(_robotAngle);
+                  _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
+                  _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
                }
            }
     }
@@ -307,13 +306,23 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                 }
 
 
-                string obstacles = APG_msg_splitstr(msg,ROB_obs);
-                _obstacles = fromStringToVectorOfPairs(obstacles);
-                for (auto obstacle : _obstacles)
+                string mapRob = APG_msg_splitstr(msg,ROB_obs);
+                if(mapRob != APG_msg_unknown)
                 {
-                     double x = obstacle.first;
-                     double y = obstacle.second;
-                    _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                    Map newPoints = fromStringToMap(mapRob);
+                    for (auto point : newPoints)
+                    {
+                        double x = point.first.first;
+                        double y = point.first.second;
+                        if (point.second == pointType::wall) {
+                            _obstacles.push_back(point.first);
+                            _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                        }
+                        else if (point.second == pointType::explored) {
+                            _explored.push_back(point.first);
+                             _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,100,0)),QBrush(QColor(0,100,0))); //draw explored
+                        }
+                    }
                 }
 
 

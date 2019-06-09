@@ -29,6 +29,7 @@ private:
     CustomQGraphicsScene* _map;
     QGraphicsView* _mapView;
     std::vector<std::pair<int,int>> _obstacles;
+    std::vector<std::pair<int,int>> _explored;
     std::string _myIp;
     int _myPort;
     QCheckBox* _localhost;

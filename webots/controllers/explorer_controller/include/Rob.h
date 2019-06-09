@@ -111,8 +111,9 @@ public:
         rightWheelMotor_->setVelocity(0);
         leftWheelMotor_->setVelocity(0);
         auto position = self_->getPosition();
-        x_ = position[1];
+        x_ = position[2];
         y_ = position[0];
+        heading_ = 0;
     }
 
 private:

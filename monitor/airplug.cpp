@@ -14,7 +14,7 @@ using namespace std;
 
 //TAILLE MAX D'UN MESSAGE INTER-SITES en octets (nb char)
 // /!\ compte le caractère '\0'
-static int APG_msg_nbc_all = 1440;
+static int APG_msg_nbc_all = 30000;
 static int APG_msg_nbc_app = 4;
 static int APG_msg_nbc_hst = 10;
 
