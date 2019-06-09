@@ -34,6 +34,10 @@ void Exp::handleRobMessage(AirplugMessage msg) {
                 }
             }
 
+            for (auto point : points) {
+                map_[point] = pointType::wall;
+            }
+
             // Adding points to local map
             addPoints(points);
 

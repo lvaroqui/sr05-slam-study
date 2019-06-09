@@ -15,7 +15,7 @@
 #include <utility>
 #include <boost/algorithm/string/split.hpp>
 #include <math.h>
-#include "utils.h"
+#include "../../../../monitor/utils.h"
 #include <chrono>
 
 class Exp {
@@ -23,6 +23,7 @@ class Exp {
     string id_;
 
     std::vector<std::pair<int, int>> points_;
+    Map map_;
     MailBox *netMailBox_;
     MailBox mailBox_;
     std::thread runner_;
@@ -32,7 +33,9 @@ class Exp {
     int heading_ = 0;
 
     void addPoints(std::vector<std::pair<int, int>> points);
+
     void handleRobMessage(AirplugMessage msg);
+
     void handleExpMessage(AirplugMessage msg);
 
     void run() {
@@ -42,11 +45,9 @@ class Exp {
                 // Handle local messages from ROB (acknowledgments and collisions)
                 if (msg.getType() == AirplugMessage::local && msg.getEmissionApp() == "ROB") {
                     handleRobMessage(msg);
-                }
-                else if (msg.getType() == AirplugMessage::air && msg.getEmissionApp() == "EXP") {
+                } else if (msg.getType() == AirplugMessage::air && msg.getEmissionApp() == "EXP") {
                     handleExpMessage(msg);
-                }
-                else if (msg.getEmissionApp() == "MAP"){
+                } else if (msg.getEmissionApp() == "MAP") {
                     if (msg.getValue("typemsg") == "MAPCO") {
                         AirplugMessage message("NET", "MAP", AirplugMessage::air);
                         message.add("typemsg", "ROBCO");
@@ -58,12 +59,12 @@ class Exp {
                     }
                 }
             }
-            std::this_thread::sleep_for (std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
 public:
-    Exp(string id, MailBox *netMailBox) : id_(std::move(id)), netMailBox_(netMailBox), runner_(&Exp::run, this) {
+    Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
     }
 
     ~Exp() {
