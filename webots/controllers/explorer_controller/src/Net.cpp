@@ -28,7 +28,7 @@ void Net::run() {
         }
         while (lchMailBox_.size() > 0) {
             AirplugMessage msg = lchMailBox_.pop();
-            if (msg.getEmissionApp() != "ROB" || RobAck(msg.getValue("roback")).getType() != RobAck::curr)
+//            if (msg.getEmissionApp() != "ROB" || RobAck(msg.getValue("roback")).getType() != RobAck::curr)
                 std::cout << id_ << ": Received this message from LCH: " << msg.serialize() << std::endl;
 
             // Handling messages from monitoring app

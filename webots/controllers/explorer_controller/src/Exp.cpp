@@ -36,37 +36,97 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 
             for (auto point : points) {
                 map_[point] = pointType::wall;
+                unsentMap_[point] = pointType::wall;
             }
 
-            // Adding points to local map
-            addPoints(points);
-
-            mapMessage.add("obs", fromVectorOfPairsToString(points));
+            mapMessage.add("obs", fromMapToString(unsentMap_));
             AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
             expMessage.add("typemsg", "collisionDetection");
             expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
                                          std::to_string(heading_));
-            expMessage.add("obs", fromVectorOfPairsToString(points));
+            expMessage.add("obs", fromMapToString(unsentMap_));
             netMailBox_->push(expMessage);
         }
         netMailBox_->push(mapMessage);
+        unsentMap_.clear();
     }
     else if (ra.getType() == RobAck::curr) {
+        int previousX = x_;
+        int previousY = y_;
         x_ = ra.getCommand()[0];
         y_ = ra.getCommand()[1];
         heading_ = ra.getCommand()[2];
+
+        if (inited && (x_ != previousX || y_ != previousY)) {
+            std::vector<std::pair<int, int>> points;
+            auto passedBy = getPointsBetween(x_, y_, previousX, previousY);
+
+            for (auto passedPoint : passedBy) {
+                for (int i = -10; i <= 10; i++) {
+                    std::pair<int, int> point(passedPoint.first + i * cos((heading_ + 90) * M_PI / 180),
+                                              passedPoint.second + i * sin((heading_ + 90) * M_PI / 180));
+                    points.push_back(point);
+                }
+            }
+            for (auto point : points) {
+                unsentMap_[point] = pointType::explored;
+                map_[point] = pointType::explored;
+            }
+        }
+        else {
+            inited = true;
+        }
     }
 }
 
 void Exp::handleExpMessage(AirplugMessage msg) {
     if (msg.getValue("typemsg") == "collisionDetection") {
-        addPoints(fromStringToVectorOfPairs(msg.getValue("obs")));
+        Map receivedMap = fromStringToMap(msg.getValue("obs"));
+        map_.insert(receivedMap.begin(), receivedMap.end());
     }
 }
 
-void Exp::addPoints(std::vector<std::pair<int, int>> points) {
-    points_.reserve(points.size());
-    points_.insert(points_.end(), points.begin(), points.end());
-    sort(points_.begin(), points_.end());
-    points_.erase(unique(points_.begin(), points_.end()), points_.end());
+void Exp::handleMapMessage(AirplugMessage msg) {
+    if (msg.getValue("typemsg") == "MAPCO") {
+        AirplugMessage message("NET", "MAP", AirplugMessage::air);
+        message.add("typemsg", "ROBCO");
+        message.add("xpos", std::to_string(x_));
+        message.add("ypos", std::to_string(y_));
+        message.add("heading", std::to_string(heading_));
+        message.add("obs", fromMapToString(map_));
+        netMailBox_->push(message);
+    }
+}
+
+std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, int y2) {
+    std::vector<std::pair<int, int>> points;
+    if (x1 == x2) {
+        if (y1 > y2) {
+            int c = y1;
+            y1 = y2;
+            y2 = c;
+        }
+        for (int i = y1; i <= y2; i++) {
+            points.emplace_back(x1, i);
+        }
+
+    }
+    else {
+        if (x1 > x2) {
+            int c = x1;
+            x1 = x2;
+            x2 = c;
+            c = y1;
+            y1 = y2;
+            y2 = c;
+        }
+        double a = (double) (y2 - y1) / (double) (x2 - x1);
+        double b = y1 - a * x1;
+
+        for (int i = x1; i <= x2; i++) {
+            points.emplace_back(i, (int) (a * i + b));
+        }
+
+    }
+    return points;
 }

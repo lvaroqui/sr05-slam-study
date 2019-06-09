@@ -22,8 +22,8 @@ class Exp {
     bool run_ = true;
     string id_;
 
-    std::vector<std::pair<int, int>> points_;
     Map map_;
+    Map unsentMap_;
     MailBox *netMailBox_;
     MailBox mailBox_;
     std::thread runner_;
@@ -31,12 +31,13 @@ class Exp {
     int x_ = 0;
     int y_ = 0;
     int heading_ = 0;
-
-    void addPoints(std::vector<std::pair<int, int>> points);
+    bool inited = false;
 
     void handleRobMessage(AirplugMessage msg);
 
     void handleExpMessage(AirplugMessage msg);
+
+    void handleMapMessage(AirplugMessage msg);
 
     void run() {
         while (run_) {
@@ -48,20 +49,14 @@ class Exp {
                 } else if (msg.getType() == AirplugMessage::air && msg.getEmissionApp() == "EXP") {
                     handleExpMessage(msg);
                 } else if (msg.getEmissionApp() == "MAP") {
-                    if (msg.getValue("typemsg") == "MAPCO") {
-                        AirplugMessage message("NET", "MAP", AirplugMessage::air);
-                        message.add("typemsg", "ROBCO");
-                        message.add("xpos", std::to_string(x_));
-                        message.add("ypos", std::to_string(y_));
-                        message.add("heading", std::to_string(heading_));
-                        message.add("obs", fromVectorOfPairsToString(points_));
-                        netMailBox_->push(message);
-                    }
+                    handleMapMessage(msg);
                 }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
+
+    std::vector<std::pair<int, int>> getPointsBetween(int x1, int y1, int x2, int y2);
 
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {

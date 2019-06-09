@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -58,6 +59,9 @@ std::vector<std::pair<int, int>> fromStringToVectorOfPairs(std::string const &va
 }
 
 std::string fromMapToString(std::map<std::pair<int, int>, pointType> const &map) {
+    if (map.empty()) {
+        return "";
+    }
     std::string str;
     for (auto point : map) {
         str += std::to_string(point.first.first) + "," + std::to_string(point.first.second) + "," + std::to_string(point.second) + " ";
