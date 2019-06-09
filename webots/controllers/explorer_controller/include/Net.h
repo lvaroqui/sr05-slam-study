@@ -14,6 +14,8 @@
 #include <thread>
 #include <map>
 
+#define BROADCAST "broadcast"
+
 class Net {
     UDPServer udpServer_;
 
@@ -31,10 +33,13 @@ class Net {
 
     std::map<string, MailBox *> subscribers;
 
+    std::map<string, int> lastMessagesReceived_;
+    int lastMessageSentNumber_;
+
     void run();
 
 public:
-    explicit Net(std::string id, int comPort) : id_(std::move(id)), udpServer_(comPort) {
+    explicit Net(std::string id, int comPort) : id_(std::move(id)), udpServer_(comPort), lastMessageSentNumber_(0) {
         std::cout << "NET initialized for robot " << id_ << " at port " << comPort << std::endl;
     }
 

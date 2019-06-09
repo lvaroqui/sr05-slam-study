@@ -51,6 +51,8 @@ void Net::run() {
             }
             // Handling messages from air app
             else if (msg.getType() == AirplugMessage::air) {
+                // Adding the message number before sending it
+                msg.add("msgnbr", std::to_string(++lastMessageSentNumber_));
                 airOutMailBox_->push(msg);
             }
         }
@@ -59,9 +61,34 @@ void Net::run() {
         while (airInMailBox_.size() > 0) {
             AirplugMessage msg = airInMailBox_.pop();
 
-            // Logging
-            std::cout << id_ << ": Received this message from AIR: " << msg.serialize() << std::endl;
-            subscribers[msg.getDestinationApp()]->push(msg);
+            string sender = msg.getValue("sender");
+            string destination = msg.getValue("dest");
+            int messageNumber = std::stoi(msg.getValue("msgnbr"));
+
+            // Checking if the message should be considered
+            if(sender != id_ && messageNumber > lastMessagesReceived_[sender]) {
+                // Message was never received, so we treat it
+                lastMessagesReceived_[sender] = messageNumber;
+
+                // Logging
+                std::cout << id_ << ": Received this message from AIR: " << msg.serialize() << std::endl;
+
+                if(destination == BROADCAST) {
+                    // The message is a broadcast : we have to transfer it & to treat it
+                    airOutMailBox_->push(msg);
+                    subscribers[msg.getDestinationApp()]->push(msg);
+                } else {
+                    // Checking if the message is for us
+                    if(destination == id_) {
+                        // The message is for us, we give it to the destination app
+                        subscribers[msg.getDestinationApp()]->push(msg);
+                    } else {
+                        // The message is not for us : we transfer it
+                        airOutMailBox_->push(msg);
+                    }
+
+                }
+            }
         }
 
         // Pause for 10 ms
