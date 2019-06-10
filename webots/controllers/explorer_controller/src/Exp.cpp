@@ -165,13 +165,13 @@ void Exp::updateAndCheckNeighbours() {
     if(disappearedNeighbours == neighbours_.size()) {
         // We don't have any neighbour anymore : we must come back to the closest one
         // Note: we artificially reset its TTL in order to keep it in the list
-        neighbours_[bestNeighbor.first].second.first = TTL_MAX;
-        goTowardsNeighbour(closestNeighbor.first);
+        neighbours_[bestNeighbour.first].second.first = TTL_MAX;
+        goTowardsNeighbour(closestNeighbour().first);
     } else {
         // We still have at least 1 neighbour : we check if we are not too far away from the closest one
-        if(closestNeighbor.second > WARNING_DISTANCE) {
+        if(closestNeighbour().second > WARNING_DISTANCE) {
             // We are too far away : we have to go back towards him
-            goTowardsNeighbour(closestNeighbor.first);
+            goTowardsNeighbour(closestNeighbour().first);
         }
     }
 
@@ -203,7 +203,7 @@ std::pair<string, float> Exp::closestNeighbour() {
 
 void Exp::goTowardsNeighbour(const string &name) {
     // We collect the neighbour's last known coordinates
-    auto neighbourCoordinates = neighbours_[name].second.second;
+    std::pair<int, int> neighbourCoordinates = neighbours_[name].second;
     // We create the message then send it to ROB
     AirplugMessage msg("EXP", "ROB", AirplugMessage::local);
     string command = "join:" + std::to_string(neighbourCoordinates.first) + "," + std::to_string(neighbourCoordinates.second);
