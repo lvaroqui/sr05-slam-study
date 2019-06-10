@@ -51,6 +51,24 @@ class Exp {
 
     std::pair<string, float> closestNeighbour();
 
+    int x_ = 0;
+    int y_ = 0;
+    int heading_ = 0;
+    bool inited = false;
+
+    std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
+
+    void handleRobMessage(AirplugMessage msg);
+
+    void handleExpMessage(AirplugMessage msg);
+
+    void handleMapMessage(AirplugMessage msg);
+
+    void updateAndCheckNeighbours();
+
+    std::pair<string, float> closestNeighbour();
+	std::map<std::string, int> clock_;
+
     void run() {
         int checkNeighbours = 0;
         while (run_) {
@@ -77,6 +95,7 @@ class Exp {
 
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
+		clock_[id_] = 0;
     }
 
     ~Exp() {

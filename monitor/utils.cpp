@@ -89,6 +89,36 @@ std::map<std::pair<int, int>, pointType> fromStringToMap(std::string const &str)
 }
 
 
+std::string fromMapToStringClock(std::map<std::string, int> const &map) {
+    if (map.empty()) {
+        return "";
+    }
+    std::string str;
+    for (auto clk : map) {
+        str += clk.first + "," + std::to_string(clk.second) + " ";
+    }
+    str.pop_back();
+    return str;
+}
+
+std::map<std::string, int> fromStringToMapClock(std::string const &str) {
+    std::map<std::string, int> map;
+    stringstream stream(str);
+    string block;
+
+    while (stream >> block) {
+        int pos = block.find(',');
+        string first = block.substr(0, pos);
+        block = block.substr(pos + 1);
+        pos = block.find(',');
+        string second = block.substr(0, pos);
+        map[first] = std::stoi(second);
+    }
+    return map;
+}
+
+
+
 int coordToMap (int coord)
 {
     int modulo = coord % ROB_SIZE;

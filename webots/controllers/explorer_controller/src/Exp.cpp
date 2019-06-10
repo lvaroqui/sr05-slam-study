@@ -25,6 +25,10 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 
         // If a collision is detected
         if (!msg.getValue("robcol").empty()) {
+
+		//Increment local clock
+		clock_[id_]++;
+
             std::vector<std::pair<int, int>> points;
 
             // Main contact point
@@ -56,6 +60,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
                                          std::to_string(heading_));
             expMessage.add("obs", fromMapToString(unsentMap_));
+	    expMessage.add("clk", fromMapToStringClock(clock_);
             netMailBox_->push(expMessage);
         }
         netMailBox_->push(mapMessage);
@@ -94,7 +99,22 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 }
 
 void Exp::handleExpMessage(AirplugMessage msg) {
+
+	//Update your clocks according to the received clock
+	std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
+	for (auto clk : receivedClock) {
+		if (clock_.contains(clk.first) && clock_[clk.first] < clk.second){
+			clock_[clk.first] = clk.second;
+		}
+		else if(!clock_.contains(clk.first)){
+			clock_[clk.first] = clk.second;
+		}
+	}	
     if (msg.getValue("typemsg") == "collisionDetection") {
+		//Increment your clock
+		clock_[id_]++;
+		
+
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
     } else if(msg.getValue("typemsg") == "helloNeighbour") {
@@ -128,6 +148,8 @@ void Exp::updateAndCheckNeighbours() {
     msg.add("typemsg", "helloNeighbour");
     msg.add("xpos", std::to_string(x_));
     msg.add("ypos", std::to_string(y_));
+    msg.add("clk", fromMapToStringClock(clock_);
+
     netMailBox_->push(msg);
 
     // Then, for each neigbour we have, we update their TTL
