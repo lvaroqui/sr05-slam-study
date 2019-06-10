@@ -23,7 +23,8 @@
 
 #define TTL_MAX 5
 #define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
-#define WARNING_DISTANCE 80 // 80*25cm = 20m
+#define WARNING_DISTANCE 2000 // 2000cm = 20m
+#define SAFE_DISTANCE 100 // 100cm = 1m
 
 class Exp {
     bool run_ = true;

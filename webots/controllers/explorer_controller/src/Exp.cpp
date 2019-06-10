@@ -168,12 +168,12 @@ void Exp::updateAndCheckNeighbours() {
             // We don't have any neighbour anymore : we must come back to the closest one
             // Note: we artificially reset its TTL in order to keep it in the list
             neighbours_[bestNeighbour.first].second.first = TTL_MAX;
-            goTowardsNeighbour(bestNeighbour.first);
+            goTowardsNeighbour(bestNeighbour);
         } else {
             // We still have at least 1 neighbour : we check if we are not too far away from the closest one
             if(bestNeighbour.second > WARNING_DISTANCE) {
                 // We are too far away : we have to go back towards him
-                goTowardsNeighbour(bestNeighbour.first);
+                goTowardsNeighbour(bestNeighbour);
             }
         }
 
@@ -204,12 +204,22 @@ std::pair<string, float> Exp::closestNeighbour() {
     return closest;
 }
 
-void Exp::goTowardsNeighbour(const string &name) {
+void Exp::goTowardsNeighbour(std::pair<string, float> neighbour) {
     // We collect the neighbour's last known coordinates
-    std::pair<int, int> neighbourCoordinates = neighbours_[name].second;
+    int neighbourX = neighbours_[neighbour.first].second.first;
+    int neighbourY = neighbours_[neighbour.first].second.second;
+
+    // We compute the coordinates we want to go to (because of the safe distance to avoid collision)
+    float currentDistance = neighbour.second;
+    float ratio = SAFE_DISTANCE / currentDistance;
+    int safeXDistance = static_cast<int>(round((x_-neighbourX) * ratio));
+    int safeYDistance = static_cast<int>(round((y_-neighbourY) * ratio));
+    int safeX = neighbourX + safeXDistance;
+    int safeY = neighbourY + safeYDistance;
+
     // We create the message then send it to ROB
     AirplugMessage msg("EXP", "ROB", AirplugMessage::local);
-    string command = "join:" + std::to_string(neighbourCoordinates.first) + "," + std::to_string(neighbourCoordinates.second);
+    string command = "join:" + std::to_string(safeX) + "," + std::to_string(safeY);
     msg.add("robord", command);
     netMailBox_->push(msg);
 }
