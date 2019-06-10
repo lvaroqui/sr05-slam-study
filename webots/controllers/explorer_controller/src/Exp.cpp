@@ -111,10 +111,6 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 		}
 	}	
     if (msg.getValue("typemsg") == "collisionDetection") {
-		//Increment your clock
-		clock_[id_]++;
-		
-
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
     } else if(msg.getValue("typemsg") == "helloNeighbour") {
