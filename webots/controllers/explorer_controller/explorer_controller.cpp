@@ -1,18 +1,33 @@
 #include "Rob.h"
 #include <iostream>
 
-
 int main(int argc, char **argv) {
     // Create the Robot instance.
-    auto *robot = new Rob(std::stoi(argv[1]));
+
+    // Net
+    Net network(argv[1], 3000 + std::stoi(argv[1]));
+
+    // Exp
+    Exp explorer(argv[1], network.getMailBox());
+
+    // Robot
+    Rob *robot = new Rob(network.getMailBox(), network.getAirInMailBox());
+
+    // Configure Network
+    network.addAirOutMailBox(robot->getAirOutMailBox());
+    network.addSubscriber("ROB", robot->getMailBox());
+    network.addSubscriber("EXP", explorer.getMailBox());
+    network.launch();
+
     int timeStep = (int) robot->getBasicTimeStep();
 
     // Main Loop
     while (robot->step(timeStep) != -1) {
-        robot->run();
-    }
+       robot->run();
+   }
 
     // Cleaning up
+    std::cout << "Cleaning Up" << std::endl;
     delete robot;
     return 0;
 }

@@ -48,7 +48,7 @@ public:
         if (type_ == moved || type_ == turned) {
             command_.push_back(stoi(param));
         }
-        else if (type_ == tuned || type_ == init || type_ == joined) {
+        else if (type_ == tuned || type_ == init || type_ == joined || type_ == curr) {
             std::vector<string> tmp;
             boost::split(tmp, param, [](char c) { return c == ','; });
             for (auto &elem : tmp) {
@@ -79,6 +79,10 @@ public:
         AirplugMessage msg("ROB", "EXP", AirplugMessage::local);
         msg.add("roback", "curr:" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
         return msg;
+    }
+
+    static void addRobotPosMsg(AirplugMessage &msg, int x, int y, int heading) {
+        msg.add("robotpos", std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(heading));
     }
 
     static AirplugMessage initMsg(int x, int y, int heading) {

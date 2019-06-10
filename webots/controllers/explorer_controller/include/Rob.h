@@ -10,6 +10,8 @@
 #include <webots/Motor.hpp>
 #include <webots/PositionSensor.hpp>
 #include <webots/Node.hpp>
+#include <webots/Emitter.hpp>
+#include <webots/Receiver.hpp>
 
 #include <iostream>
 #include <limits>
@@ -30,13 +32,10 @@ class Rob : public Supervisor {
     // Robot node (useful to get information as supervisor)
     Node *self_;
 
-    // Net
-    Net net_;
-
-    // Exp
-    Exp exp_;
-
     //MailBox
+    MailBox *netMailBox_;
+    MailBox *airInMailBox_;
+    MailBox airOutMailBox_;
     MailBox mailBox_;
 
     // Robot motors and sensors
@@ -44,8 +43,10 @@ class Rob : public Supervisor {
     Motor *rightWheelMotor_;
     PositionSensor *leftPositionSensor_;
     PositionSensor *rightPositionSensor_;
+    Emitter *emitter_;
+    Receiver *receiver_;
 
-    std::vector<DistanceSensor*> frontDistanceSensors_;
+    std::vector<DistanceSensor *> frontDistanceSensors_;
     // Current position
     double x_ = 0.0;
     double y_ = 0.0;
@@ -80,19 +81,16 @@ class Rob : public Supervisor {
 
 public:
     /// Constructor for the Explorer
-    /// \param comPort Com Port to listen to
-    explicit Rob(int comPort) : Supervisor(),
-                                     self_(this->getSelf()),
-                                     net_(getName(), comPort),
-                                     leftWheelMotor_(getMotor("left wheel motor")),
-                                     rightWheelMotor_(getMotor("right wheel motor")),
-                                     leftPositionSensor_(getPositionSensor("left wheel sensor")),
-                                     rightPositionSensor_(getPositionSensor("right wheel sensor")),
-                                     exp_(){
-        net_.addSubscriber("ROB", &mailBox_);
-        net_.addSubscriber("EXP", exp_.getMailBox());
-        net_.launch();
-
+    explicit Rob(MailBox *netMailBox, MailBox *airInMailBox) : Supervisor(),
+                                        self_(this->getSelf()),
+                                        netMailBox_(netMailBox),
+                                        airInMailBox_(airInMailBox),
+                                        emitter_(getEmitter("emitter")),
+                                        receiver_(getReceiver("receiver")),
+                                        leftWheelMotor_(getMotor("left wheel motor")),
+                                        rightWheelMotor_(getMotor("right wheel motor")),
+                                        leftPositionSensor_(getPositionSensor("left wheel sensor")),
+                                        rightPositionSensor_(getPositionSensor("right wheel sensor")) {
         frontDistanceSensors_.push_back(getDistanceSensor("ds0"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds1"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds2"));
@@ -106,20 +104,24 @@ public:
 
         leftPositionSensor_->enable((int) getBasicTimeStep());
         rightPositionSensor_->enable((int) getBasicTimeStep());
+        receiver_->enable((int) getBasicTimeStep());
 
         rightWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
         leftWheelMotor_->setPosition(std::numeric_limits<double>::infinity());
         rightWheelMotor_->setVelocity(0);
         leftWheelMotor_->setVelocity(0);
+        auto position = self_->getPosition();
+        x_ = position[2];
+        y_ = position[0];
+        heading_ = 0;
     }
 
 private:
     double modAngle(double angle) {
         if (angle > M_PI) {
-            return angle - 2*M_PI;
-        }
-        else if (angle < -M_PI) {
-            return angle + 2*M_PI;
+            return angle - 2 * M_PI;
+        } else if (angle < -M_PI) {
+            return angle + 2 * M_PI;
         }
         return angle;
     }
@@ -127,8 +129,7 @@ private:
     double saturate(double value, double saturation) {
         if (value > saturation) {
             return saturation;
-        }
-        else if (value < -saturation) {
+        } else if (value < -saturation) {
             return -saturation;
         }
         return value;
@@ -178,39 +179,30 @@ private:
     }
 
     /// Handles incoming messages
-    void handleMessages() {
-        while (mailBox_.size() > 0) {
-            RobOrd robord(mailBox_.pop().getValue("robord"));
-            switch (robord.getType()) {
-                case RobOrd::Type::move :
-                    translate(static_cast<double>(robord.getCommand()[0]) / 100.0);
-                    break;
-                case RobOrd::Type::turn :
-                    rotate(static_cast<double>(robord.getCommand()[0]) * M_PI / 180.0);
-                    break;
-                case RobOrd::tune:
-                    break;
-                case RobOrd::lacc:
-                    break;
-                case RobOrd::init:
-                    x_ = static_cast<double>(robord.getCommand()[0]) / 100.0;
-                    y_ = static_cast<double>(robord.getCommand()[1]) / 100.0;
-                    heading_ = static_cast<double>(robord.getCommand()[2]) * M_PI / 180.0;
-                    break;
-                case RobOrd::curr:
-                    net_.giveMessage(RobAck::currMsg(static_cast<int>(x_), static_cast<int>(y_), static_cast<int>(heading_) * 180.0 / M_PI));
-                    break;
-                case RobOrd::join:
-                    join(static_cast<double>(robord.getCommand()[0]) / 100.0,
-                         static_cast<double>(robord.getCommand()[1]) / 100.0);
-                    break;
-                case RobOrd::undefined:
-                    break;
-            }
+    void handleMessages();
+
+    void handleInterRobotCommunications() {
+        while(receiver_->getQueueLength() > 0) {
+            const char * messageRaw = (const char *)receiver_->getData();
+            AirplugMessage message((string(messageRaw)));
+            airInMailBox_->push(message);
+            receiver_->nextPacket();
+        }
+        if (airOutMailBox_.size() > 0) {
+            string message = airOutMailBox_.pop().serialize();
+            emitter_->send(message.c_str(), message.length() + 1);
         }
     }
 
 public:
+    MailBox *getMailBox() {
+        return &mailBox_;
+    }
+
+    MailBox *getAirOutMailBox() {
+        return &airOutMailBox_;
+    }
+
     /// Called every tick
     void run() {
         // Get sensor positions
@@ -225,8 +217,7 @@ public:
             double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
             x_ += cos(heading_) * distance;
             y_ += sin(heading_) * distance;
-        }
-        else { // Rotating
+        } else { // Rotating
             heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
             heading_ = modAngle(heading_);
         }
@@ -234,15 +225,18 @@ public:
 
         //  If robot is executing a rotating order
         if (rotating_) {
-            // Checking if we reached the desired heading
+            // Checking if we reached the desired heading_
             if (abs(targetHeading_ - heading_) < 0.001) {
                 // If we are in a joining operation we then go to the translating part
                 if (joining_) {
                     translating_ = true;
                 }
-                // If we were rotating, acknowledging with turned
+                    // If we were rotating, acknowledging with turned
                 else {
-                    net_.giveMessage(RobAck::turnedMsg(int(round(modAngle(initialHeading_ - targetHeading_) * 180.0 / M_PI))));
+                    auto msg = RobAck::turnedMsg(int(round(modAngle(initialHeading_ - targetHeading_) * 180.0 / M_PI)));
+                    RobAck::addRobotPosMsg(msg, static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
+                                           static_cast<int>(heading_ * 180.0 / M_PI));
+                    netMailBox_->push(msg);
                 }
                 rotating_ = false;
                 stop();
@@ -251,7 +245,7 @@ public:
                 controlRotation();
             }
         }
-        // If robot is executing a translating order
+            // If robot is executing a translating order
         else if (translating_) {
             // Finding minimum distance from obstacles
             double minDistance = 0.0;
@@ -268,7 +262,7 @@ public:
             }
 
             // Checking if we reached the desired position
-            if (abs(currentTranslation_ - targetTranslation_) < 0.001 && speedLeft < 0.01)  {
+            if (abs(currentTranslation_ - targetTranslation_) < 0.001 && speedLeft < 0.01) {
                 AirplugMessage msg;
 
                 // If we were joining, acknowledging with joined
@@ -284,7 +278,9 @@ public:
                     msg.add("robcol", "1");
                     collision_ = false;
                 }
-                net_.giveMessage(msg);
+                RobAck::addRobotPosMsg(msg, static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
+                                       static_cast<int>(heading_ * 180.0 / M_PI));
+                netMailBox_->push(msg);
                 translating_ = false;
                 stop();
             } else {
@@ -294,6 +290,13 @@ public:
         }
 
         // Com
+        static int i = 30;
+        if (i++ == 30) {
+            netMailBox_->push(RobAck::currMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
+                                        static_cast<int>(heading_ * 180.0 / M_PI)));
+            i = 0;
+        }
+        handleInterRobotCommunications();
         handleMessages();
 
         // Update previous sensor values

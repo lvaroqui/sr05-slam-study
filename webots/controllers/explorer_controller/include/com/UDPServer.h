@@ -21,10 +21,10 @@ class UDPServer {
     std::thread listener_;
     std::mutex mutex_messages_;
     std::queue<std::string> messages_;
+    boost::array<char, 2048> buffer{};
 
     void listen() {
         while (true) {
-            boost::array<char, 128> buffer{};
             udp::endpoint remote_endpoint;
             socket_.receive_from(boost::asio::buffer(buffer), remote_endpoint);
             mutex_messages_.lock();
@@ -42,7 +42,7 @@ public:
     std::string popMessage() {
         std::string message;
         mutex_messages_.lock();
-        message = messages_.back();
+        message = messages_.front();
         messages_.pop();
         mutex_messages_.unlock();
         return message;

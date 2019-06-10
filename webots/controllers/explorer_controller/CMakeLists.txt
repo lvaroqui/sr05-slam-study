@@ -5,7 +5,9 @@ find_package (Threads)
 find_package(Boost 1.70.0 COMPONENTS system)
 
 # Defining header and source files
-set(HEADERS)
+set(HEADERS
+        ../../../monitor/utils.h
+        )
 
 set(SRCS
         explorer_controller.cpp
@@ -18,6 +20,7 @@ set(SRCS
         src/com/RobOrd.cpp
         src/com/RobAck.cpp
         src/com/MailBox.cpp
+        ../../../monitor/utils.cpp
         )
 
 # Including WeBots

@@ -1,3 +1,5 @@
+#include <utility>
+
 //
 // Created by luc on 03/06/19.
 //
@@ -11,56 +13,79 @@
 #include <thread>
 #include <vector>
 #include <utility>
+#include <boost/algorithm/string/split.hpp>
+#include <math.h>
+#include "../../../../monitor/utils.h"
+#include <chrono>
+#include <map>
+#include <utility>
+#include <limits>
+
+#define TTL_MAX 5
+#define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
 
 class Exp {
-    std::vector<std::pair<int, int>> points_;
+    bool run_ = true;
+    string id_;
+
+    Map map_;
+    Map unsentMap_;
+    MailBox *netMailBox_;
     MailBox mailBox_;
     std::thread runner_;
 
 
+    int x_ = 0;
+    int y_ = 0;
+    int heading_ = 0;
+    bool inited = false;
+
+    std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
+
+    void handleRobMessage(AirplugMessage msg);
+
+    void handleExpMessage(AirplugMessage msg);
+
+    void handleMapMessage(AirplugMessage msg);
+
+    void updateAndCheckNeighbours();
+
+    std::pair<string, float> closestNeighbour();
+	std::map<std::string, int> clock_;
+
     void run() {
-        while (true) {
+        int checkNeighbours = 0;
+        while (run_) {
             while (mailBox_.size() > 0) {
                 AirplugMessage msg = mailBox_.pop();
-                std::cout << "EXP received : " << msg.serialize() << std::endl;
-
+                // Handle local messages from ROB (acknowledgments and collisions)
                 if (msg.getType() == AirplugMessage::local && msg.getEmissionApp() == "ROB") {
-                    RobAck ra(msg.getValue("roback"));
-                    switch (ra.getType()) {
-                        case RobAck::undefinied:
-                            break;
-                        case RobAck::moved:
-                            break;
-                        case RobAck::turned:
-                            break;
-                        case RobAck::joined:
-                            if (!msg.getValue("robcol").empty()) {
-                                points_.emplace_back(ra.getCommand()[0], ra.getCommand()[1]);
-                            }
-                            break;
-                        case RobAck::lacc:
-                            break;
-                        case RobAck::init:
-                            break;
-                        case RobAck::curr:
-                            break;
-                        case RobAck::tuned:
-                            break;
-                        case RobAck::order:
-                            break;
-                    }
+                    handleRobMessage(msg);
+                } else if (msg.getType() == AirplugMessage::air && msg.getEmissionApp() == "EXP") {
+                    handleExpMessage(msg);
+                } else if (msg.getEmissionApp() == "MAP") {
+                    handleMapMessage(msg);
                 }
-                std::cout << "Map points are : " << std::endl;
-                for (auto point : points_) {
-                    std::cout << point.first << "," << point.second << std::endl;
-                }
-                std::cout << std::endl;
             }
+            if (checkNeighbours++ == CHECK_NEIGHBOURS_RATE) {
+                checkNeighbours = 0;
+                updateAndCheckNeighbours();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
+    std::vector<std::pair<int, int>> getPointsBetween(int x1, int y1, int x2, int y2);
+
 public:
-    Exp() : runner_(&Exp::run, this) {
+    Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
+		clock_[id_] = 0;
+    }
+
+    ~Exp() {
+        run_ = false;
+        runner_.join();
+        std::cout << "Exp shutdown";
     }
 
     MailBox *getMailBox() {

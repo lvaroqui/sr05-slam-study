@@ -14,45 +14,52 @@
 #include <thread>
 #include <map>
 
+#define BROADCAST "broadcast"
+#define NEIGHBOURHOOD "neighbourhood"
+
 class Net {
     UDPServer udpServer_;
 
-    std::string nodeName_;
+    bool run_ = true;
+
+    std::string id_;
+
+    std::map<string, UDPClient *> monitors_;
 
     std::thread runner_;
 
-    MailBox mailBox_;
+    MailBox lchMailBox_;
+    MailBox airInMailBox_;
+    MailBox *airOutMailBox_ = nullptr;
 
     std::map<string, MailBox *> subscribers;
 
-    void run() {
-        while (true) {
-            while (udpServer_.getNumberOfMessages() > 0) {
-                mailBox_.push(AirplugMessage(udpServer_.popMessage()));
-            }
-            while (mailBox_.size() > 0) {
-                AirplugMessage msg = mailBox_.pop();
-                if (subscribers.count(msg.getDestinationApp()) == 1) {
-                    subscribers[msg.getDestinationApp()]->push(msg);
-                }
-                else {
-                    std::cout << "Unknown destination app: " << msg.serialize() << std::endl;
-                }
-            }
-        }
-    }
+    std::map<string, int> lastMessagesReceived_;
+    int lastMessageSentNumber_;
 
-    void sendMessageUDP(AirplugMessage message) {
-        UDPClient client("localhost", 3000);
-
-        // Adding header
-        message.add("sender", nodeName_);
-
-        client.sendMessage(message.serialize());
-    }
+    void run();
 
 public:
-    explicit Net(std::string name, int comPort) : nodeName_(std::move(name)), udpServer_(comPort) {
+    explicit Net(std::string id, int comPort) : id_(std::move(id)), udpServer_(comPort), lastMessageSentNumber_(0) {
+        std::cout << "NET initialized for robot " << id_ << " at port " << comPort << std::endl;
+    }
+
+    ~Net() {
+        run_ = false;
+        runner_.join();
+        std::cout << "Net " << id_ << " shutdown";
+    }
+
+    MailBox *getMailBox() {
+        return &lchMailBox_;
+    }
+
+    MailBox *getAirInMailBox() {
+        return &airInMailBox_;
+    }
+
+    void addAirOutMailBox(MailBox *airOutMailBox) {
+        airOutMailBox_ = airOutMailBox;
     }
 
     void addSubscriber(const string &appName, MailBox *mailBox) {
@@ -61,10 +68,6 @@ public:
 
     void launch() {
         runner_ = std::thread(&Net::run, this);
-    }
-
-    void giveMessage(AirplugMessage msg) {
-        mailBox_.push(msg);
     }
 };
 

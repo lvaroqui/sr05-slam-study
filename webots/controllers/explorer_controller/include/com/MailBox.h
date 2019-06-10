@@ -18,7 +18,7 @@ public:
     AirplugMessage pop() {
         AirplugMessage msg;
         mutex.lock();
-        msg = queue.back();
+        msg = queue.front();
         queue.pop();
         mutex.unlock();
         return msg;
