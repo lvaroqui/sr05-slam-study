@@ -160,21 +160,23 @@ void Exp::updateAndCheckNeighbours() {
             disappearedNeighbours++;
     }
 
-    // We check if we are still OK or too far away from other robots    
+    // We check if we are still OK or too far away from other robots
+    auto bestNeighbour = closestNeighbour();   
     if(disappearedNeighbours == neighbours_.size()) {
         // We don't have any neighbour anymore : we must come back to the closest one
-        auto bestNeighbour = closestNeighbour();
-        //TODO : get back towards him
+        // Note: we artificially reset its TTL in order to keep it in the list
+        neighbours_[bestNeighbor.first].second.first = TTL_MAX;
+        goTowardsNeighbour(closestNeighbor.first);
     } else {
         // We still have at least 1 neighbour : we check if we are not too far away from the closest one
-        auto closestNeighbor = closestNeighbour();
-        //TODO : check if closestNeighbor->second > WARNING_DISTANCE (to define)
-        //and, if so, get back towards him
+        if(closestNeighbor.second > WARNING_DISTANCE) {
+            // We are too far away : we have to go back towards him
+            goTowardsNeighbour(closestNeighbor.first);
+        }
     }
 
     // Finally, if some neighbours have disappeared, we clean them
     if(disappearedNeighbours) {
-        // Some neighbours (but not all) have disappeared : we remove them
         for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
             if(it->second.first == 0) {
                 it = neighbours_.erase(it);
@@ -197,6 +199,16 @@ std::pair<string, float> Exp::closestNeighbour() {
     }
     std::pair<string, float> closest(closestNeighbourName, shortestDistance);
     return closest;
+}
+
+void Exp::goTowardsNeighbour(const string &name) {
+    // We collect the neighbour's last known coordinates
+    auto neighbourCoordinates = neighbours_[name].second.second;
+    // We create the message then send it to ROB
+    AirplugMessage msg("EXP", "ROB", AirplugMessage::local);
+    string command = "join:" + std::to_string(neighbourCoordinates.first) + "," + std::to_string(neighbourCoordinates.second);
+    msg.add("robord", command);
+    netMailBox_->push(msg);
 }
 
 std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, int y2) {

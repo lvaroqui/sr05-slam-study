@@ -23,6 +23,7 @@
 
 #define TTL_MAX 5
 #define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
+#define WARNING_DISTANCE 80 // 80*25cm = 20m
 
 class Exp {
     bool run_ = true;
@@ -53,6 +54,8 @@ class Exp {
 
     std::pair<string, float> closestNeighbour();
 	std::map<std::string, int> clock_;
+
+    void goTowardsNeighbour(const string &name);
 
     void run() {
         int checkNeighbours = 0;
