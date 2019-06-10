@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <sstream>
 #include <iostream>
+#include <math.h>
 
 #define ROB_SIZE 25
 using namespace std;
@@ -100,4 +101,13 @@ int coordToMap (int coord)
     else
         map++;
 
+}
+
+int floorNeg(int num) {
+    if (num > 0) {
+        return floor(num);
+    }
+    else {
+        return -floor(-num);
+    }
 }

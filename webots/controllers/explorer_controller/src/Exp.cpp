@@ -14,8 +14,8 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         // Getting robot position
         std::vector<string> tmp;
         boost::split(tmp, msg.getValue("robotpos"), [](char c) { return c == ','; });
-        x_ = std::stoi(tmp[0]);
-        y_ = std::stoi(tmp[1]);
+        x_ = coordToMap(std::stoi(tmp[0]));
+        y_ = coordToMap(std::stoi(tmp[1]));
         heading_ = std::stoi(tmp[2]);
 
         // Preparing message for monitor APP
@@ -27,25 +27,15 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         if (!msg.getValue("robcol").empty()) {
             std::vector<std::pair<int, int>> points;
 
-            // Main contact point
-            int xWall = x_ + 14 * cos(heading_ * M_PI / 180);
-            int yWall = y_ + 14 * sin(heading_ * M_PI / 180);
-
-            // Calculating points adjacent to the contact main point
-            for (int i = -10; i <= 10; i++) {
-                std::pair<int, int> point(xWall + i * cos((heading_ + 90) * M_PI / 180),
-                                          yWall + i * sin((heading_ + 90) * M_PI / 180));
-                auto it = find(points.begin(), points.end(), point);
-                if (it == points.end()) {
-                    points.push_back(point);
-                }
-            }
+            // Wall
+            std::pair<int, int> wall = std::make_pair(
+                    x_ + floorNeg(1.5 * cos(heading_ * M_PI / 180)),
+                    y_ + floorNeg(1.5 * sin(heading_ * M_PI / 180))
+            );
 
             // Adding wall to map
-            for (auto point : points) {
-                map_[point] = pointType::wall;
-                unsentMap_[point] = pointType::wall;
-            }
+            map_[wall] = pointType::wall;
+            unsentMap_[wall] = pointType::wall;
 
             // Sending observations to monitoring APP
             mapMessage.add("obs", fromMapToString(unsentMap_));
@@ -62,32 +52,18 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 
         // No more pending messages, we clear the temporary Map
         unsentMap_.clear();
-    }
-    else if (ra.getType() == RobAck::curr) {
+    } else if (ra.getType() == RobAck::curr) {
         int previousX = x_;
         int previousY = y_;
-        x_ = ra.getCommand()[0];
-        y_ = ra.getCommand()[1];
-        heading_ = ra.getCommand()[2];
+        x_ = coordToMap(ra.getCommand()[0]);
+        y_ = coordToMap(ra.getCommand()[1]);
+        heading_ = coordToMap(ra.getCommand()[2]);
 
         if (inited && (x_ != previousX || y_ != previousY)) {
-            std::vector<std::pair<int, int>> points;
-            auto passedBy = getPointsBetween(x_, y_, previousX, previousY);
-
-            for (auto passedPoint : passedBy) {
-                std::cout << passedPoint.first << " " << passedPoint.second << std::endl;
-                for (int i = -10; i <= 10; i++) {
-                    std::pair<int, int> point(passedPoint.first + i * cos((heading_ + 90) * M_PI / 180),
-                                              passedPoint.second + i * sin((heading_ + 90) * M_PI / 180));
-                    points.push_back(point);
-                }
-            }
-            for (auto point : points) {
-                unsentMap_[point] = pointType::explored;
-                map_[point] = pointType::explored;
-            }
-        }
-        else {
+            std::pair<int, int> point(x_, y_);
+            unsentMap_[point] = pointType::explored;
+            map_[point] = pointType::explored;
+        } else {
             inited = true;
         }
     }
@@ -97,7 +73,7 @@ void Exp::handleExpMessage(AirplugMessage msg) {
     if (msg.getValue("typemsg") == "collisionDetection") {
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
-    } else if(msg.getValue("typemsg") == "helloNeighbour") {
+    } else if (msg.getValue("typemsg") == "helloNeighbour") {
         // Update from a neighbour, sending us is position
         string sender = msg.getValue("sender");
         int x = std::stoi(msg.getValue("xpos"));
@@ -132,14 +108,14 @@ void Exp::updateAndCheckNeighbours() {
 
     // Then, for each neigbour we have, we update their TTL
     int disappearedNeighbours = 0;
-    for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
+    for (auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
         int ttlValue = --it->second.first;
-        if(ttlValue == 0)
+        if (ttlValue == 0)
             disappearedNeighbours++;
     }
 
     // We check if we are still OK or too far away from other robots    
-    if(disappearedNeighbours == neighbours_.size()) {
+    if (disappearedNeighbours == neighbours_.size()) {
         // We don't have any neighbour anymore : we must come back to the closest one
         auto bestNeighbour = closestNeighbour();
         //TODO : get back towards him
@@ -151,10 +127,10 @@ void Exp::updateAndCheckNeighbours() {
     }
 
     // Finally, if some neighbours have disappeared, we clean them
-    if(disappearedNeighbours) {
+    if (disappearedNeighbours) {
         // Some neighbours (but not all) have disappeared : we remove them
-        for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
-            if(it->second.first == 0) {
+        for (auto it = neighbours_.begin(); it != neighbours_.end();) {
+            if (it->second.first == 0) {
                 it = neighbours_.erase(it);
             } else {
                 ++it;
@@ -166,9 +142,9 @@ void Exp::updateAndCheckNeighbours() {
 std::pair<string, float> Exp::closestNeighbour() {
     string closestNeighbourName = "";
     float shortestDistance = std::numeric_limits<float>::max();
-    for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-        float distance = sqrt(pow(it->second.second.first-x_, 2) + pow(it->second.second.second-y_, 2));
-        if(distance < shortestDistance) {
+    for (auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
+        float distance = sqrt(pow(it->second.second.first - x_, 2) + pow(it->second.second.second - y_, 2));
+        if (distance < shortestDistance) {
             closestNeighbourName = it->first;
             shortestDistance = distance;
         }
@@ -189,8 +165,7 @@ std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, i
             points.emplace_back(x1, i);
         }
 
-    }
-    else {
+    } else {
         if (x1 > x2) {
             int c = x1;
             x1 = x2;

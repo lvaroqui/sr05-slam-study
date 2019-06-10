@@ -14,18 +14,19 @@ void Net::run() {
 
             // Handling connection
             if (msg.getValue("typemsg") == "MAPCO") {
-                monitors_.emplace(msg.getValue("ip") + ":" + msg.getValue("port"), new UDPClient(msg.getValue("ip"), std::stoi(msg.getValue("port"))));
+                monitors_.emplace(msg.getValue("ip") + ":" + msg.getValue("port"),
+                                  new UDPClient(msg.getValue("ip"), std::stoi(msg.getValue("port"))));
                 subscribers["EXP"]->push(msg);
                 std::cout << "New monitor at: " << msg.getValue("ip") << ":" << msg.getValue("port") << std::endl;
             }
 
-            // Handling disconnection
+                // Handling disconnection
             else if (msg.getValue("typemsg") == "ENDCO") {
                 monitors_.erase(msg.getValue("ip") + ":" + msg.getValue("port"));
             }
 
-            // Handling robot order
-            else if (msg.getValue("typemsg") == "ROBMSG"){
+                // Handling robot order
+            else if (msg.getValue("typemsg") == "ROBMSG") {
                 msg.remove("typemsg");
                 std::cout << id_ << " Passing to subscriber " << msg.serialize() << std::endl;
                 subscribers[msg.getDestinationApp()]->push(msg);
@@ -36,7 +37,9 @@ void Net::run() {
         while (lchMailBox_.size() > 0) {
             AirplugMessage msg = lchMailBox_.pop();
             // Logging
-            if (msg.getEmissionApp() != "ROB" || RobAck(msg.getValue("roback")).getType() != RobAck::curr)
+            if ((msg.getEmissionApp() != "ROB" ||
+                 RobAck(msg.getValue("roback")).getType() != RobAck::curr) &&
+                    (msg.getValue("typemsg") != "helloNeighbour"))
                 std::cout << id_ << ": Received this message from LCH: " << msg.serialize() << std::endl;
 
             // Handling messages from monitoring app
@@ -45,11 +48,11 @@ void Net::run() {
                     monitor.second->sendMessage(msg.serialize());
                 }
             }
-            // Handling messages from local app
+                // Handling messages from local app
             else if (msg.getType() == AirplugMessage::local) {
                 subscribers[msg.getDestinationApp()]->push(msg);
             }
-            // Handling messages from air app
+                // Handling messages from air app
             else if (msg.getType() == AirplugMessage::air) {
                 // Adding the message number before sending it
                 msg.add("msgnbr", std::to_string(++lastMessageSentNumber_));
@@ -66,20 +69,21 @@ void Net::run() {
             int messageNumber = std::stoi(msg.getValue("msgnbr"));
 
             // Checking if the message should be considered
-            if(sender != id_ && messageNumber > lastMessagesReceived_[sender]) {
+            if (sender != id_ && messageNumber > lastMessagesReceived_[sender]) {
                 // Message was never received, so we treat it
                 lastMessagesReceived_[sender] = messageNumber;
 
                 // Logging
-                std::cout << id_ << ": Received this message from AIR: " << msg.serialize() << std::endl;
+                if (msg.getValue("typemsg") != "helloNeighbour")
+                    std::cout << id_ << ": Received this message from AIR: " << msg.serialize() << std::endl;
 
-                if(destination == BROADCAST) {
+                if (destination == BROADCAST) {
                     // The message is a broadcast : we have to transfer it & to treat it
                     airOutMailBox_->push(msg);
                     subscribers[msg.getDestinationApp()]->push(msg);
                 } else {
                     // Checking if the message is for us
-                    if(destination == id_ || destination == NEIGHBOURHOOD) {
+                    if (destination == id_ || destination == NEIGHBOURHOOD) {
                         // The message is for us, we give it to the destination app
                         subscribers[msg.getDestinationApp()]->push(msg);
                     } else {
@@ -92,6 +96,6 @@ void Net::run() {
         }
 
         // Pause for 10 ms
-        std::this_thread::sleep_for (std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }

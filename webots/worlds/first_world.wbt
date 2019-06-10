@@ -2,8 +2,8 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.0619780727339699 0.9060559648676746 0.4185944421846642 2.8396825022344814
-  position 1.0912501306916371 3.423777190210457 -2.627432860531682
+  orientation 0.03293005218551429 0.8591929411325742 0.510590933694495 3.2235426945112864
+  position -0.10437585083210099 3.9602109974106923 -1.6343404949696976
 }
 TexturedBackground {
 }
@@ -13,42 +13,20 @@ Panel {
   translation -0.5900000000000003 0 0.8700000000000006
 }
 Pioneer2 {
-  translation 0.4863458951816273 0 -0.02355327211970855
+  translation 1.7063458951816284 0 0.4464467278802916
   name "1"
-  controller "explorer_controller"
   controllerArgs "1"
   color 0.20392156862745098 0.396078431372549 0.6431372549019608
-  extensionSlot [
-    Receiver {
-    }
-    Emitter {
-    }
-  ]
 }
 Pioneer2 {
-  translation -0.3736541048183728 0 0.07644672788029146
   name "2"
-  controller "explorer_controller"
   controllerArgs "2"
   color 0.45098039215686275 0.8235294117647058 0.08627450980392157
-  extensionSlot [
-    Receiver {
-    }
-    Emitter {
-    }
-  ]
 }
 Pioneer2 {
   translation 1.3100000000000005 0 0
   name "3"
-  controller "explorer_controller"
   controllerArgs "3"
-  extensionSlot [
-    Receiver {
-    }
-    Emitter {
-    }
-  ]
 }
 Floor {
 }
