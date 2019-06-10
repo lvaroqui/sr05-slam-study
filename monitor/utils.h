@@ -5,6 +5,7 @@
 #include <map>
 #include <utility>
 
+#define ROB_SIZE 50
 enum pointType {
     wall,
     explored

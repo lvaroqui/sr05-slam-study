@@ -26,8 +26,8 @@
 
 #include <utils.h>
 
-#define GRID_STEP 25
-#define ROB_SIZE 25
+#define GRID_STEP 50
+
 
 using namespace std;
 
@@ -142,7 +142,7 @@ Monitor::Monitor() : Application("MAP"), _robot(nullptr)
     _moveDistance->setMinimum(-5000);
     _moveDistance->setMaximum(5000);
     _moveDistance->setValue(0);
-    _moveDistance->setSingleStep(25);
+    _moveDistance->setSingleStep(50);
 
     _turnButton = new QPushButton("turn");
     _turnAngle = new QSpinBox();
@@ -159,13 +159,13 @@ Monitor::Monitor() : Application("MAP"), _robot(nullptr)
     _xJoin->setMaximum(5000);
     _xJoin->setSuffix(" cm");
     _xJoin->setPrefix("x: ");
-    _xJoin->setSingleStep(25);
+    _xJoin->setSingleStep(50);
 
     _yJoin = new QSpinBox();
     _yJoin->setMinimum(-5000);
     _yJoin->setValue(0);
     _yJoin->setMaximum(5000);
-    _yJoin->setSingleStep(25);
+    _yJoin->setSingleStep(50);
     _yJoin->setSuffix(" cm");
     _yJoin->setPrefix("y: ");
 
@@ -249,21 +249,20 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                            double y = point.first.second;
                            if (point.second == pointType::wall) {
                                _obstacles.push_back(point.first);
-                               _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                               _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0)))->setZValue(-1); //draw obstacle
                            }
                            else if (point.second == pointType::explored) {
                                _explored.push_back(point.first);
-                                _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,100,0)),QBrush(QColor(0,100,0))); //draw explored
+                                _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,100,0)),QBrush(QColor(0,100,0)))->setZValue(-1); //draw explored
                            }
                        }
                    }
 
                    cout << "_robotAngle = " << _robotAngle << endl;
                   _robot->setRotation(_robotAngle);
-                  int xMap = coordToMap(_XconnectedRobot);
-                  int yMap = coordToMap(_YconnectedRobot);
-                  _robot->setX(xMap*GRID_STEP);
-                  _robot->setY(yMap*GRID_STEP);
+
+                  _robot->setX(_XconnectedRobot*GRID_STEP);
+                  _robot->setY(_YconnectedRobot*GRID_STEP);
                }
            }
     }
@@ -293,24 +292,23 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                 _YconnectedRobot = stoi(yString.c_str());
                 _robotAngle = stoi(rotation.c_str());
 
-                int xMap = coordToMap(_XconnectedRobot);
-                int yMap = coordToMap(_YconnectedRobot);
                 cout << "xpos = " << xString << " ypos = " << yString << " robot angle = " << rotation <<  endl;
 
                 if(_robot == nullptr){
                     cout << "create robot" << endl;
-                    _robot = _map->addRect(QRect(0,0,GRID_STEP,GRID_STEP),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
-                    _robot->setTransformOriginPoint(GRID_STEP/2, GRID_STEP/2);
+                    _robot = _map->addRect(QRect(0.1*GRID_STEP,0.1*GRID_STEP,GRID_STEP*0.8,GRID_STEP*0.8),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                    _robot->setTransformOriginPoint(GRID_STEP*0.9/2, GRID_STEP*0.9/2);
+                    //_robot->setOpacity(0.8);
                     _robot->setRotation(_robotAngle);
-                   _robot->setX(xMap*GRID_STEP);
-                   _robot->setY(yMap*GRID_STEP);
+                   _robot->setX(_XconnectedRobot*GRID_STEP);
+                   _robot->setY(_YconnectedRobot*GRID_STEP);
                 }
                 else
                 {
                     cout << "modify robot" <<endl;
                     _robot->setRotation(_robotAngle);
-                   _robot->setX(xMap*GRID_STEP);
-                   _robot->setY(yMap*GRID_STEP);
+                   _robot->setX(_XconnectedRobot*GRID_STEP);
+                   _robot->setY(_YconnectedRobot*GRID_STEP);
                 }
 
 
@@ -324,11 +322,11 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                         double y = point.first.second;
                         if (point.second == pointType::wall) {
                             _obstacles.push_back(point.first);
-                            _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0))); //draw obstacle
+                            _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,0,0)),QBrush(QColor(0,0,0)))->setZValue(-1); //draw obstacle
                         }
                         else if (point.second == pointType::explored) {
                             _explored.push_back(point.first);
-                             _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,100,0)),QBrush(QColor(0,100,0))); //draw explored
+                             _map->addRect(QRectF(x*GRID_STEP,y*GRID_STEP,GRID_STEP,GRID_STEP), QPen(QColor(0,100,0)),QBrush(QColor(0,100,0)))->setZValue(-1); //draw explored
                         }
                     }
                 }
