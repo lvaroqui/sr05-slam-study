@@ -34,8 +34,6 @@ class Exp {
     MailBox mailBox_;
     std::thread runner_;
 
-    
-
     int x_ = 0;
     int y_ = 0;
     int heading_ = 0;
@@ -47,6 +45,10 @@ class Exp {
 
     void handleExpMessage(AirplugMessage msg);
 
+	void handleFusionMapMessage(AirplugMessage msg);
+	
+	void handleMergeMapMessage(AirplugMessage msg); 
+	
     void handleMapMessage(AirplugMessage msg);
 
     void updateAndCheckNeighbours();

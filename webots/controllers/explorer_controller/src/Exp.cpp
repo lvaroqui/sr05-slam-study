@@ -60,7 +60,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
                                          std::to_string(heading_));
             expMessage.add("obs", fromMapToString(unsentMap_));
-	    expMessage.add("clk", fromMapToStringClock(clock_));
+			expMessage.add("clk", fromMapToStringClock(clock_));
             netMailBox_->push(expMessage);
         }
         netMailBox_->push(mapMessage);
@@ -99,7 +99,6 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 }
 
 void Exp::handleExpMessage(AirplugMessage msg) {
-
 	//Update your clocks according to the received clock
 	std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
 	for (auto clk : receivedClock) {
@@ -107,7 +106,18 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 			clock_[clk.first] = clk.second;
 		}
 		else if(clock_.find(clk.first) == clock_.end()){
+			// the received clock is not yet in the clocks' map
+			
+			// add the new clock line in the clocks' map 
 			clock_[clk.first] = clk.second;
+			
+			//send local map for fusion with the newly detected robot's map
+			AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+            expMessage.add("typemsg", "fusionMap");
+			expMessage.add("sender", id_);
+            expMessage.add("obs", fromMapToString(map_));
+			expMessage.add("clk", fromMapToStringClock(clock_));
+            netMailBox_->push(expMessage);
 		}
 	}	
     if (msg.getValue("typemsg") == "collisionDetection") {
@@ -121,6 +131,55 @@ void Exp::handleExpMessage(AirplugMessage msg) {
         std::pair<int, int> pos(x, y);
         std::pair<int, std::pair<int, int>> neighbour(TTL_MAX, pos);
         neighbours_[sender] = neighbour;
+    }
+}
+
+void Exp::handleFusionMapMessage(AirplugMessage msg){
+	if (msg.getValue("typemsg") == "fusionMap") {
+		string sender = msg.getValue("sender");
+		Map receivedMap = fromStringToMap(msg.getValue("obs"));
+		
+		std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
+		for (auto clk : receivedClock) {
+			if (clock_.find(clk.first) != clock_.end() && clock_[clk.first] < clk.second){
+				clock_[clk.first] = clk.second;
+			}
+			else if(clock_.find(clk.first) == clock_.end()){
+				// the received clock is not yet in the clocks' map
+				
+				// add the new clock line in the clocks' map 
+				clock_[clk.first] = clk.second;
+			}
+		}
+		
+		for (auto const& pt : receivedMap){
+			if ( map_.find(pt.first) == map_.end() ){
+				// if point exists on received map while it is not on the local map
+				
+				//add missing point
+				map_[pt.first] = pt.second;
+			}
+			else {
+				if (map_[pt.first] != pt.second){
+					map_[pt.first] = pointType::wall;
+				}
+			}
+		}
+		
+		AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+        expMessage.add("typemsg", "mergedMap");
+		expMessage.add("sender", id_);
+		expMessage.add("dest", sender);
+        expMessage.add("obs", fromMapToString(map_));
+        netMailBox_->push(expMessage);
+	}
+}
+
+void Exp::handleMergeMapMessage(AirplugMessage msg) {
+    if (msg.getValue("typemsg") == "mergedMap") {
+        if (id_ == msg.getValue("dest")){
+			map_ = fromStringToMap(msg.getValue("obs"));
+		}
     }
 }
 
