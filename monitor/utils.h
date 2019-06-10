@@ -23,4 +23,7 @@ std::vector<std::pair<int,int>> fromStringToVectorOfPairs(std::string const& val
 std::string fromMapToString(Map const& map);
 Map fromStringToMap(std::string const& str);
 
+
+int coordToMap (int coord);
+
 #endif // UTILS_H

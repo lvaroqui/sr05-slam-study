@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 
+#define ROB_SIZE 25
 using namespace std;
 
 bool fromStringToBool(const std::string &value) {
@@ -85,4 +86,18 @@ std::map<std::pair<int, int>, pointType> fromStringToMap(std::string const &str)
         map[std::make_pair(std::stoi(first), std::stoi(second))] = static_cast<pointType>(std::stoi(third));
     }
     return map;
+}
+
+
+int coordToMap (int coord)
+{
+    int modulo = coord % ROB_SIZE;
+    int map= coord / ROB_SIZE;
+    if(modulo < ROB_SIZE/2 && modulo > ROB_SIZE/2)
+        map = modulo;
+    else if (modulo <=ROB_SIZE/2)
+        map-- ;
+    else
+        map++;
+
 }

@@ -26,9 +26,8 @@
 
 #include <utils.h>
 
-#define GRID_STEP 5
-#define ROB_LENGTH 21.19 * 5
-#define ROB_WIDTH  21.19 * 5
+#define GRID_STEP 25
+#define ROB_SIZE 25
 
 using namespace std;
 
@@ -141,8 +140,9 @@ Monitor::Monitor() : Application("MAP"), _robot(nullptr)
     _moveDistance->setSuffix(" cm");
     _moveDistance->setPrefix("move: ");
     _moveDistance->setMinimum(-5000);
+    _moveDistance->setMaximum(5000);
     _moveDistance->setValue(0);
-
+    _moveDistance->setSingleStep(25);
 
     _turnButton = new QPushButton("turn");
     _turnAngle = new QSpinBox();
@@ -156,12 +156,16 @@ Monitor::Monitor() : Application("MAP"), _robot(nullptr)
     _xJoin = new QSpinBox();
     _xJoin->setMinimum(-5000);
     _xJoin->setValue(0);
+    _xJoin->setMaximum(5000);
     _xJoin->setSuffix(" cm");
     _xJoin->setPrefix("x: ");
+    _xJoin->setSingleStep(25);
 
     _yJoin = new QSpinBox();
     _yJoin->setMinimum(-5000);
     _yJoin->setValue(0);
+    _yJoin->setMaximum(5000);
+    _yJoin->setSingleStep(25);
     _yJoin->setSuffix(" cm");
     _yJoin->setPrefix("y: ");
 
@@ -256,8 +260,10 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
                    cout << "_robotAngle = " << _robotAngle << endl;
                   _robot->setRotation(_robotAngle);
-                  _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
-                  _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
+                  int xMap = coordToMap(_XconnectedRobot);
+                  int yMap = coordToMap(_YconnectedRobot);
+                  _robot->setX(xMap*GRID_STEP);
+                  _robot->setY(yMap*GRID_STEP);
                }
            }
     }
@@ -287,22 +293,24 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                 _YconnectedRobot = stoi(yString.c_str());
                 _robotAngle = stoi(rotation.c_str());
 
+                int xMap = coordToMap(_XconnectedRobot);
+                int yMap = coordToMap(_YconnectedRobot);
                 cout << "xpos = " << xString << " ypos = " << yString << " robot angle = " << rotation <<  endl;
 
                 if(_robot == nullptr){
                     cout << "create robot" << endl;
-                    _robot = _map->addRect(QRect(0,0,ROB_LENGTH,ROB_WIDTH),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
-		   _robot->setTransformOriginPoint(ROB_LENGTH/2, ROB_WIDTH/2);
-	           _robot->setRotation(_robotAngle);
-                   _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
-                   _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
+                    _robot = _map->addRect(QRect(0,0,GRID_STEP,GRID_STEP),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
+                    _robot->setTransformOriginPoint(GRID_STEP/2, GRID_STEP/2);
+                    _robot->setRotation(_robotAngle);
+                   _robot->setX(xMap*GRID_STEP);
+                   _robot->setY(yMap*GRID_STEP);
                 }
                 else
                 {
                     cout << "modify robot" <<endl;
-	            _robot->setRotation(_robotAngle);
-                   _robot->setX(_XconnectedRobot*GRID_STEP - ROB_LENGTH/2);
-                   _robot->setY(_YconnectedRobot*GRID_STEP - ROB_WIDTH/2);
+                    _robot->setRotation(_robotAngle);
+                   _robot->setX(xMap*GRID_STEP);
+                   _robot->setY(yMap*GRID_STEP);
                 }
 
 
