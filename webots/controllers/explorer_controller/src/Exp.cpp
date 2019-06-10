@@ -152,36 +152,39 @@ void Exp::updateAndCheckNeighbours() {
 
     netMailBox_->push(msg);
 
-    // Then, for each neigbour we have, we update their TTL
-    int disappearedNeighbours = 0;
-    for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-        int ttlValue = --it->second.first;
-        if(ttlValue == 0)
-            disappearedNeighbours++;
-    }
-
-    // We check if we are still OK or too far away from other robots
-    auto bestNeighbour = closestNeighbour();   
-    if(disappearedNeighbours == neighbours_.size()) {
-        // We don't have any neighbour anymore : we must come back to the closest one
-        // Note: we artificially reset its TTL in order to keep it in the list
-        neighbours_[bestNeighbour.first].second.first = TTL_MAX;
-        goTowardsNeighbour(closestNeighbour().first);
-    } else {
-        // We still have at least 1 neighbour : we check if we are not too far away from the closest one
-        if(closestNeighbour().second > WARNING_DISTANCE) {
-            // We are too far away : we have to go back towards him
-            goTowardsNeighbour(closestNeighbour().first);
+    // The remaining operations are only done if we have at least 1 neighbour registered
+    if(neighbours_.size() > 0) {
+        // For each neigbour we have, we update their TTL
+        int disappearedNeighbours = 0;
+        for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
+            int ttlValue = --it->second.first;
+            if(ttlValue == 0)
+                disappearedNeighbours++;
         }
-    }
 
-    // Finally, if some neighbours have disappeared, we clean them
-    if(disappearedNeighbours) {
-        for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
-            if(it->second.first == 0) {
-                it = neighbours_.erase(it);
-            } else {
-                ++it;
+        // We check if we are still OK or too far away from other robots
+        auto bestNeighbour = closestNeighbour();
+        if(disappearedNeighbours == neighbours_.size()) {
+            // We don't have any neighbour anymore : we must come back to the closest one
+            // Note: we artificially reset its TTL in order to keep it in the list
+            neighbours_[bestNeighbour.first].second.first = TTL_MAX;
+            goTowardsNeighbour(bestNeighbour.first);
+        } else {
+            // We still have at least 1 neighbour : we check if we are not too far away from the closest one
+            if(bestNeighbour.second > WARNING_DISTANCE) {
+                // We are too far away : we have to go back towards him
+                goTowardsNeighbour(bestNeighbour.first);
+            }
+        }
+
+        // Finally, if some neighbours have disappeared, we clean them
+        if(disappearedNeighbours) {
+            for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
+                if(it->second.first == 0) {
+                    it = neighbours_.erase(it);
+                } else {
+                    ++it;
+                }
             }
         }
     }
