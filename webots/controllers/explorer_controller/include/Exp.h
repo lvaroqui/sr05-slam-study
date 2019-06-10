@@ -18,10 +18,11 @@
 #include "../../../../monitor/utils.h"
 #include <chrono>
 #include <map>
-#include <pair>
+#include <utility>
 #include <limits>
 
 #define TTL_MAX 5
+#define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
 
 class Exp {
     bool run_ = true;
@@ -51,6 +52,7 @@ class Exp {
     std::pair<string, float> closestNeighbour();
 
     void run() {
+        int checkNeighbours = 0;
         while (run_) {
             while (mailBox_.size() > 0) {
                 AirplugMessage msg = mailBox_.pop();
@@ -63,7 +65,10 @@ class Exp {
                     handleMapMessage(msg);
                 }
             }
-            updateAndCheckNeighbours(); //TODO : we should run it at a fixed clean rate
+            if (checkNeighbours++ == CHECK_NEIGHBOURS_RATE) {
+                checkNeighbours = 0;
+                updateAndCheckNeighbours();
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }

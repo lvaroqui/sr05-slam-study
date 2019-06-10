@@ -120,7 +120,7 @@ void Exp::handleMapMessage(AirplugMessage msg) {
     }
 }
 
-void updateAndCheckNeighbours() {
+void Exp::updateAndCheckNeighbours() {
     // First, we send a message to our neighbours telling them we're still here
     AirplugMessage msg("EXP", "EXP", AirplugMessage::air);
     msg.add("sender", id_);
@@ -133,7 +133,7 @@ void updateAndCheckNeighbours() {
     // Then, for each neigbour we have, we update their TTL
     int disappearedNeighbours = 0;
     for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-        int ttlValue = --it->second->first;
+        int ttlValue = --it->second.first;
         if(ttlValue == 0)
             disappearedNeighbours++;
     }
@@ -154,7 +154,7 @@ void updateAndCheckNeighbours() {
     if(disappearedNeighbours) {
         // Some neighbours (but not all) have disappeared : we remove them
         for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
-            if(it->second->first == 0) {
+            if(it->second.first == 0) {
                 it = neighbours_.erase(it);
             } else {
                 ++it;
@@ -163,17 +163,17 @@ void updateAndCheckNeighbours() {
     }
 }
 
-std::pair<string, float> closestNeighbour() {
+std::pair<string, float> Exp::closestNeighbour() {
     string closestNeighbourName = "";
-    float shortestDistance = std::numeric_limits<float>::max;
+    float shortestDistance = std::numeric_limits<float>::max();
     for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-        float distance = sqrt(pow(it->second->second->first-x_, 2) + pow(it->second->second->second-y_, 2));
+        float distance = sqrt(pow(it->second.second.first-x_, 2) + pow(it->second.second.second-y_, 2));
         if(distance < shortestDistance) {
             closestNeighbourName = it->first;
             shortestDistance = distance;
         }
     }
-    pair<string, float> closest(closestNeighbourName, shortestDistance);
+    std::pair<string, float> closest(closestNeighbourName, shortestDistance);
     return closest;
 }
 
