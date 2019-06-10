@@ -33,20 +33,8 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             // Adding wall to map
             map_[wall] = pointType::wall;
 
-            // Sending observations to monitoring APP
-            AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
-            mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                     std::to_string(heading_));
-            mapMessage.add("obs", std::to_string(wall.first) + "," + std::to_string(wall.second) + "," + std::to_string(pointType::wall));
-            netMailBox_->push(mapMessage);
-
-            // Sending observations to other robots
-            AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
-            expMessage.add("typemsg", "infos");
-            expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                         std::to_string(heading_));
-            expMessage.add("obs", std::to_string(wall.first) + "," + std::to_string(wall.second) + "," + std::to_string(pointType::wall));
-            netMailBox_->push(expMessage);
+            // Sending observations to monitoring APP and other robots
+            reportPoint(wall.first, wall.second, pointType::wall);
         }
         else {
             AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
@@ -65,29 +53,9 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         heading_ = coordToMap(ra.getCommand()[2]);
 
         auto point = std::make_pair(x_, y_);
-        if (inited && (map_.find(point) == map_.end() || map_[point] != pointType::explored)) {
-            AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
-            mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                     std::to_string(heading_));
-            mapMessage.add("obs", std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(pointType::explored));
-
-            AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
-            expMessage.add("typemsg", "infos");
-            expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                         std::to_string(heading_));
-            expMessage.add("obs", std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(pointType::explored));
-            netMailBox_->push(expMessage);
-
+        if (map_.find(point) == map_.end() || map_[point] != pointType::explored) {
+            reportPoint(point.first, point.second, pointType::explored);
             map_[std::make_pair(x_, y_)] = pointType::explored;
-        } else if (!inited) {
-            map_[std::make_pair(x_, y_)] = pointType::explored;
-            AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
-            expMessage.add("typemsg", "infos");
-            expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                         std::to_string(heading_));
-            expMessage.add("obs", std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(pointType::explored));
-            netMailBox_->push(expMessage);
-            inited = true;
         }
     }
 }
@@ -205,4 +173,18 @@ std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, i
 
     }
     return points;
+}
+
+void Exp::reportPoint(int x, int y, pointType type) {
+    AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+    mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                             std::to_string(heading_));
+    mapMessage.add("obs", std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(type));
+    netMailBox_->push(mapMessage);
+
+    AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+    expMessage.add("typemsg", "infos");
+    expMessage.add("obs", std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(type));
+    netMailBox_->push(expMessage);
+    std::cout << "Hellohello" << std::endl;
 }

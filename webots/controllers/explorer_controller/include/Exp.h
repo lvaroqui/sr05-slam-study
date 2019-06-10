@@ -37,7 +37,6 @@ class Exp {
     int x_ = 0;
     int y_ = 0;
     int heading_ = 0;
-    bool inited = false;
 
     std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
 
@@ -50,6 +49,8 @@ class Exp {
     void updateAndCheckNeighbours();
 
     std::pair<string, float> closestNeighbour();
+
+    void reportPoint(int x, int y, pointType type);
 
     void run() {
         int checkNeighbours = 0;
