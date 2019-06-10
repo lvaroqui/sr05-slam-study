@@ -115,6 +115,7 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 			AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
             expMessage.add("typemsg", "fusionMap");
 			expMessage.add("sender", id_);
+			expMessage.add("dest", msg.getValue("sender");
             expMessage.add("obs", fromMapToString(map_));
 			expMessage.add("clk", fromMapToStringClock(clock_));
             netMailBox_->push(expMessage);
@@ -125,30 +126,32 @@ void Exp::handleExpMessage(AirplugMessage msg) {
         map_.insert(receivedMap.begin(), receivedMap.end());
     } 
 	else if (msg.getValue("typemsg") == "fusionMap") {
-		string sender = msg.getValue("sender");
-		Map receivedMap = fromStringToMap(msg.getValue("obs"));
-		
-		for (auto const& pt : receivedMap){
-			if ( map_.find(pt.first) == map_.end() ){
-				// if point exists on received map while it is not on the local map
-				
-				//add missing point
-				map_[pt.first] = pt.second;
-			}
-			else {
-				if (map_[pt.first] != pt.second){
-					map_[pt.first] = pointType::wall;
+		if (id_ == msg.getValue("dest")){
+			string sender = msg.getValue("sender");
+			Map receivedMap = fromStringToMap(msg.getValue("obs"));
+			
+			for (auto const& pt : receivedMap){
+				if ( map_.find(pt.first) == map_.end() ){
+					// if point exists on received map while it is not on the local map
+					
+					//add missing point
+					map_[pt.first] = pt.second;
+				}
+				else {
+					if (map_[pt.first] != pt.second){
+						map_[pt.first] = pointType::wall;
+					}
 				}
 			}
+			
+			AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+			expMessage.add("typemsg", "mergedMap");
+			expMessage.add("sender", id_);
+			expMessage.add("dest", sender);
+			expMessage.add("obs", fromMapToString(map_));
+			expMessage.add("clk", fromMapToStringClock(clock_));
+			netMailBox_->push(expMessage);
 		}
-		
-		AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
-        expMessage.add("typemsg", "mergedMap");
-		expMessage.add("sender", id_);
-		expMessage.add("dest", sender);
-        expMessage.add("obs", fromMapToString(map_));
-		expMessage.add("clk", fromMapToStringClock(clock_));
-        netMailBox_->push(expMessage);
 	}
 	else if (msg.getValue("typemsg") == "mergedMap") {
         if (id_ == msg.getValue("dest")){
