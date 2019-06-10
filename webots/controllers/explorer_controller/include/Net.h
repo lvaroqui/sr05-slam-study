@@ -15,6 +15,7 @@
 #include <map>
 
 #define BROADCAST "broadcast"
+#define NEIGHBOURHOOD "neighbourhood"
 
 class Net {
     UDPServer udpServer_;

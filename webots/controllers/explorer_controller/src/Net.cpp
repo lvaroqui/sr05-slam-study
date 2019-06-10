@@ -79,7 +79,7 @@ void Net::run() {
                     subscribers[msg.getDestinationApp()]->push(msg);
                 } else {
                     // Checking if the message is for us
-                    if(destination == id_) {
+                    if(destination == id_ || destination == NEIGHBOURHOOD) {
                         // The message is for us, we give it to the destination app
                         subscribers[msg.getDestinationApp()]->push(msg);
                     } else {

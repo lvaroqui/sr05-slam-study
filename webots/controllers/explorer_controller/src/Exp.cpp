@@ -97,6 +97,14 @@ void Exp::handleExpMessage(AirplugMessage msg) {
     if (msg.getValue("typemsg") == "collisionDetection") {
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
+    } else if(msg.getValue("typemsg") == "helloNeighbour") {
+        // Update from a neighbour, sending us is position
+        string sender = msg.getValue("sender");
+        int x = std::stoi(msg.getValue("xpos"));
+        int y = std::stoi(msg.getValue("ypos"));
+        std::pair<int, int> pos(x, y);
+        std::pair<int, std::pair<int, int>> neighbour(TTL_MAX, pos);
+        neighbours_[sender] = neighbour;
     }
 }
 
@@ -110,6 +118,63 @@ void Exp::handleMapMessage(AirplugMessage msg) {
         message.add("obs", fromMapToString(map_));
         netMailBox_->push(message);
     }
+}
+
+void updateAndCheckNeighbours() {
+    // First, we send a message to our neighbours telling them we're still here
+    AirplugMessage msg("EXP", "EXP", AirplugMessage::air);
+    msg.add("sender", id_);
+    msg.add("dest", "neighbourhood");
+    msg.add("typemsg", "helloNeighbour");
+    msg.add("xpos", std::to_string(x_));
+    msg.add("ypos", std::to_string(y_));
+    netMailBox_->push(msg);
+
+    // Then, for each neigbour we have, we update their TTL
+    int disappearedNeighbours = 0;
+    for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
+        int ttlValue = --it->second->first;
+        if(ttlValue == 0)
+            disappearedNeighbours++;
+    }
+
+    // We check if we are still OK or too far away from other robots    
+    if(disappearedNeighbours == neighbours_.size()) {
+        // We don't have any neighbour anymore : we must come back to the closest one
+        auto bestNeighbour = closestNeighbour();
+        //TODO : get back towards him
+    } else {
+        // We still have at least 1 neighbour : we check if we are not too far away from the closest one
+        auto closestNeighbor = closestNeighbour();
+        //TODO : check if closestNeighbor->second > WARNING_DISTANCE (to define)
+        //and, if so, get back towards him
+    }
+
+    // Finally, if some neighbours have disappeared, we clean them
+    if(disappearedNeighbours) {
+        // Some neighbours (but not all) have disappeared : we remove them
+        for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
+            if(it->second->first == 0) {
+                it = neighbours_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+std::pair<string, float> closestNeighbour() {
+    string closestNeighbourName = "";
+    float shortestDistance = std::numeric_limits<float>::max;
+    for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
+        float distance = sqrt(pow(it->second->second->first-x_, 2) + pow(it->second->second->second-y_, 2));
+        if(distance < shortestDistance) {
+            closestNeighbourName = it->first;
+            shortestDistance = distance;
+        }
+    }
+    pair<string, float> closest(closestNeighbourName, shortestDistance);
+    return closest;
 }
 
 std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, int y2) {

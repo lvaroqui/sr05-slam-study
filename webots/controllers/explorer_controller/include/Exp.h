@@ -17,6 +17,11 @@
 #include <math.h>
 #include "../../../../monitor/utils.h"
 #include <chrono>
+#include <map>
+#include <pair>
+#include <limits>
+
+#define TTL_MAX 5
 
 class Exp {
     bool run_ = true;
@@ -33,11 +38,17 @@ class Exp {
     int heading_ = 0;
     bool inited = false;
 
+    std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
+
     void handleRobMessage(AirplugMessage msg);
 
     void handleExpMessage(AirplugMessage msg);
 
     void handleMapMessage(AirplugMessage msg);
+
+    void updateAndCheckNeighbours();
+
+    std::pair<string, float> closestNeighbour();
 
     void run() {
         while (run_) {
@@ -52,6 +63,7 @@ class Exp {
                     handleMapMessage(msg);
                 }
             }
+            updateAndCheckNeighbours(); //TODO : we should run it at a fixed clean rate
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
