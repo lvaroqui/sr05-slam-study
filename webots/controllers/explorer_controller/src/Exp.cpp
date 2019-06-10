@@ -186,5 +186,4 @@ void Exp::reportPoint(int x, int y, pointType type) {
     expMessage.add("typemsg", "infos");
     expMessage.add("obs", std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(type));
     netMailBox_->push(expMessage);
-    std::cout << "Hellohello" << std::endl;
 }

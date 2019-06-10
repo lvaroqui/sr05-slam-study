@@ -51,10 +51,12 @@ void Net::run() {
             else if (msg.getType() == AirplugMessage::local) {
                 subscribers[msg.getDestinationApp()]->push(msg);
             }
-                // Handling messages from air app
+                // Handling messages to air app
             else if (msg.getType() == AirplugMessage::air) {
                 // Adding the message number before sending it
                 msg.add("msgnbr", std::to_string(++lastMessageSentNumber_));
+                msg.add("sender", id_);
+                msg.add("dest", BROADCAST);
                 airOutMailBox_->push(msg);
             }
         }
