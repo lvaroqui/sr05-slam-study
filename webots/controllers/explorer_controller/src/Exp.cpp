@@ -123,34 +123,10 @@ void Exp::handleExpMessage(AirplugMessage msg) {
     if (msg.getValue("typemsg") == "collisionDetection") {
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
-    } else if(msg.getValue("typemsg") == "helloNeighbour") {
-        // Update from a neighbour, sending us is position
-        string sender = msg.getValue("sender");
-        int x = std::stoi(msg.getValue("xpos"));
-        int y = std::stoi(msg.getValue("ypos"));
-        std::pair<int, int> pos(x, y);
-        std::pair<int, std::pair<int, int>> neighbour(TTL_MAX, pos);
-        neighbours_[sender] = neighbour;
-    }
-}
-
-void Exp::handleFusionMapMessage(AirplugMessage msg){
-	if (msg.getValue("typemsg") == "fusionMap") {
+    } 
+	else if (msg.getValue("typemsg") == "fusionMap") {
 		string sender = msg.getValue("sender");
 		Map receivedMap = fromStringToMap(msg.getValue("obs"));
-		
-		std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
-		for (auto clk : receivedClock) {
-			if (clock_.find(clk.first) != clock_.end() && clock_[clk.first] < clk.second){
-				clock_[clk.first] = clk.second;
-			}
-			else if(clock_.find(clk.first) == clock_.end()){
-				// the received clock is not yet in the clocks' map
-				
-				// add the new clock line in the clocks' map 
-				clock_[clk.first] = clk.second;
-			}
-		}
 		
 		for (auto const& pt : receivedMap){
 			if ( map_.find(pt.first) == map_.end() ){
@@ -171,15 +147,22 @@ void Exp::handleFusionMapMessage(AirplugMessage msg){
 		expMessage.add("sender", id_);
 		expMessage.add("dest", sender);
         expMessage.add("obs", fromMapToString(map_));
+		expMessage.add("clk", fromMapToStringClock(clock_));
         netMailBox_->push(expMessage);
 	}
-}
-
-void Exp::handleMergeMapMessage(AirplugMessage msg) {
-    if (msg.getValue("typemsg") == "mergedMap") {
+	else if (msg.getValue("typemsg") == "mergedMap") {
         if (id_ == msg.getValue("dest")){
 			map_ = fromStringToMap(msg.getValue("obs"));
 		}
+    }
+	else if(msg.getValue("typemsg") == "helloNeighbour") {
+        // Update from a neighbour, sending us is position
+        string sender = msg.getValue("sender");
+        int x = std::stoi(msg.getValue("xpos"));
+        int y = std::stoi(msg.getValue("ypos"));
+        std::pair<int, int> pos(x, y);
+        std::pair<int, std::pair<int, int>> neighbour(TTL_MAX, pos);
+        neighbours_[sender] = neighbour;
     }
 }
 

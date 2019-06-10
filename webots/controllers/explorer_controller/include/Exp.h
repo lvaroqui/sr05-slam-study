@@ -44,10 +44,6 @@ class Exp {
     void handleRobMessage(AirplugMessage msg);
 
     void handleExpMessage(AirplugMessage msg);
-
-	void handleFusionMapMessage(AirplugMessage msg);
-	
-	void handleMergeMapMessage(AirplugMessage msg); 
 	
     void handleMapMessage(AirplugMessage msg);
 
