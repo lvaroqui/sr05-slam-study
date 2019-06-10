@@ -2,8 +2,8 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.1511013130998585 0.9216757299262087 0.35732652020874245 2.3568491480563165
-  position 2.9604268280934463 3.5492106813977937 -2.67510519938024
+  orientation -0.09206095030729897 0.9391527892796613 0.33093325583378486 2.5858169427200353
+  position 2.691136592769508 4.260491211360216 -3.9675246492489142
 }
 TexturedBackground {
 }
@@ -19,31 +19,31 @@ Wall {
   size 0.5 0.5 0.5
 }
 Wall {
-  translation 0.25 0 10.56
+  translation 0.25 0 10.5
   name "wall(1)"
   size 20 0.5 0.5
 }
 Wall {
-  translation 0.25 0 -9.969999999999969
+  translation 0.25 0 -10
   name "wall(2)"
   size 20 0.5 0.5
 }
 Wall {
-  translation -10.05 0 0.25
+  translation -10 0 0.25
   rotation 0 1 0 1.5707963220000003
   name "wall(4)"
   size 20 0.5 0.5
 }
 Wall {
-  translation 10.55 0 0.25000010054897537
+  translation 10.5 0 0.25000010054897537
   rotation 0 1 0 1.5707963220000003
   name "wall(3)"
   size 20 0.5 0.5
 }
-RectangleArena {
+Floor {
   translation 0.25 0 0.25
-  floorSize 20 20
-  floorTileSize 1 1
+  size 20 20
+  tileSize 1 1
 }
 Pioneer2 {
   translation 1 0 0

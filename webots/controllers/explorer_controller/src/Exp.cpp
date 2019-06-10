@@ -19,9 +19,6 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         heading_ = std::stoi(tmp[2]);
 
         // Preparing message for monitor APP
-        AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
-        mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                 std::to_string(heading_));
 
         // If a collision is detected
         if (!msg.getValue("robcol").empty()) {
@@ -35,45 +32,68 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 
             // Adding wall to map
             map_[wall] = pointType::wall;
-            unsentMap_[wall] = pointType::wall;
 
             // Sending observations to monitoring APP
-            mapMessage.add("obs", fromMapToString(unsentMap_));
+            AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+            mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                     std::to_string(heading_));
+            mapMessage.add("obs", std::to_string(wall.first) + "," + std::to_string(wall.second) + "," + std::to_string(pointType::wall));
+            netMailBox_->push(mapMessage);
 
-            // Preparing message for other robots
+            // Sending observations to other robots
             AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
-            expMessage.add("typemsg", "collisionDetection");
+            expMessage.add("typemsg", "infos");
             expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
                                          std::to_string(heading_));
-            expMessage.add("obs", fromMapToString(unsentMap_));
+            expMessage.add("obs", std::to_string(wall.first) + "," + std::to_string(wall.second) + "," + std::to_string(pointType::wall));
             netMailBox_->push(expMessage);
         }
-        netMailBox_->push(mapMessage);
+        else {
+            AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+            mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                     std::to_string(heading_));
+            mapMessage.add("obs", "");
+            netMailBox_->push(mapMessage);
+        }
+
 
         // No more pending messages, we clear the temporary Map
         unsentMap_.clear();
     } else if (ra.getType() == RobAck::curr) {
-        int previousX = x_;
-        int previousY = y_;
         x_ = coordToMap(ra.getCommand()[0]);
         y_ = coordToMap(ra.getCommand()[1]);
         heading_ = coordToMap(ra.getCommand()[2]);
 
-        if (inited && (x_ != previousX || y_ != previousY)) {
-            std::pair<int, int> point(x_, y_);
-            unsentMap_[point] = pointType::explored;
-            map_[point] = pointType::explored;
-        } else {
-            std::pair<int, int> point(x_, y_);
-            unsentMap_[point] = pointType::explored;
-            map_[point] = pointType::explored;
+        auto point = std::make_pair(x_, y_);
+        if (inited && (map_.find(point) == map_.end() || map_[point] != pointType::explored)) {
+            AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+            mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                     std::to_string(heading_));
+            mapMessage.add("obs", std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(pointType::explored));
+
+            AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+            expMessage.add("typemsg", "infos");
+            expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                         std::to_string(heading_));
+            expMessage.add("obs", std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(pointType::explored));
+            netMailBox_->push(expMessage);
+
+            map_[std::make_pair(x_, y_)] = pointType::explored;
+        } else if (!inited) {
+            map_[std::make_pair(x_, y_)] = pointType::explored;
+            AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+            expMessage.add("typemsg", "infos");
+            expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                         std::to_string(heading_));
+            expMessage.add("obs", std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(pointType::explored));
+            netMailBox_->push(expMessage);
             inited = true;
         }
     }
 }
 
 void Exp::handleExpMessage(AirplugMessage msg) {
-    if (msg.getValue("typemsg") == "collisionDetection") {
+    if (msg.getValue("typemsg") == "infos") {
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
     } else if (msg.getValue("typemsg") == "helloNeighbour") {
