@@ -3,7 +3,7 @@
 #include <iostream>
 #include <math.h>
 
-#define ROB_SIZE 25
+#define ROB_SIZE 50
 using namespace std;
 
 bool fromStringToBool(const std::string &value) {

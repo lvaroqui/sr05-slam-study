@@ -8,9 +8,14 @@ void Rob::controlTranslation() {
     currentTranslation_ += (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
     double error = targetTranslation_ - currentTranslation_;
 
-    double command = 15 * error;
+    double command = 25 * error;
+    if (careful_) {
+        command = saturate(command, 2);
+    }
+    else {
+        command = saturate(command, 5);
+    }
 
-    command = saturate(command, 5);
 
     rightWheelMotor_->setVelocity(command);
     leftWheelMotor_->setVelocity(command);

@@ -52,6 +52,7 @@ class Rob : public Supervisor {
     double y_ = 0.0;
     double heading_ = 0.0;
     bool collision_ = false;
+    bool careful_ = false;
 
     // Variables for controllers
     double currentLeftRotation_ = 0.0;
@@ -82,19 +83,21 @@ class Rob : public Supervisor {
 public:
     /// Constructor for the Explorer
     explicit Rob(MailBox *netMailBox, MailBox *airInMailBox) : Supervisor(),
-                                        self_(this->getSelf()),
-                                        netMailBox_(netMailBox),
-                                        airInMailBox_(airInMailBox),
-                                        emitter_(getEmitter("emitter")),
-                                        receiver_(getReceiver("receiver")),
-                                        leftWheelMotor_(getMotor("left wheel motor")),
-                                        rightWheelMotor_(getMotor("right wheel motor")),
-                                        leftPositionSensor_(getPositionSensor("left wheel sensor")),
-                                        rightPositionSensor_(getPositionSensor("right wheel sensor")) {
+                                                               self_(this->getSelf()),
+                                                               netMailBox_(netMailBox),
+                                                               airInMailBox_(airInMailBox),
+                                                               emitter_(getEmitter("emitter")),
+                                                               receiver_(getReceiver("receiver")),
+                                                               leftWheelMotor_(getMotor("left wheel motor")),
+                                                               rightWheelMotor_(getMotor("right wheel motor")),
+                                                               leftPositionSensor_(
+                                                                       getPositionSensor("left wheel sensor")),
+                                                               rightPositionSensor_(
+                                                                       getPositionSensor("right wheel sensor")) {
         frontDistanceSensors_.push_back(getDistanceSensor("ds0"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds1"));
-        frontDistanceSensors_.push_back(getDistanceSensor("ds2"));
-        frontDistanceSensors_.push_back(getDistanceSensor("ds13"));
+//        frontDistanceSensors_.push_back(getDistanceSensor("ds2"));
+//        frontDistanceSensors_.push_back(getDistanceSensor("ds13"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds14"));
         frontDistanceSensors_.push_back(getDistanceSensor("ds15"));
 
@@ -182,8 +185,8 @@ private:
     void handleMessages();
 
     void handleInterRobotCommunications() {
-        while(receiver_->getQueueLength() > 0) {
-            const char * messageRaw = (const char *)receiver_->getData();
+        while (receiver_->getQueueLength() > 0) {
+            const char *messageRaw = (const char *) receiver_->getData();
             AirplugMessage message((string(messageRaw)));
             airInMailBox_->push(message);
             receiver_->nextPacket();
@@ -255,9 +258,15 @@ public:
                 }
             }
 
+            if (minDistance > 300) {
+                careful_ = true;
+            } else {
+                careful_ = false;
+            }
+
             // Detecting collisions
-            if (minDistance > 950 && currentTranslation_ < targetTranslation_ && !collision_) {
-                targetTranslation_ = currentTranslation_ + 0.1;
+            if (minDistance > 790 && currentTranslation_ < targetTranslation_ && !collision_) {
+                targetTranslation_ = currentTranslation_ + 0.01;
                 collision_ = true;
             }
 
@@ -293,7 +302,7 @@ public:
         static int i = 30;
         if (i++ == 30) {
             netMailBox_->push(RobAck::currMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
-                                        static_cast<int>(heading_ * 180.0 / M_PI)));
+                                              static_cast<int>(heading_ * 180.0 / M_PI)));
             i = 0;
         }
         handleInterRobotCommunications();
