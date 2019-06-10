@@ -34,22 +34,7 @@ class Exp {
     MailBox mailBox_;
     std::thread runner_;
 
-    int x_ = 0;
-    int y_ = 0;
-    int heading_ = 0;
-    bool inited = false;
-
-    std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
-
-    void handleRobMessage(AirplugMessage msg);
-
-    void handleExpMessage(AirplugMessage msg);
-
-    void handleMapMessage(AirplugMessage msg);
-
-    void updateAndCheckNeighbours();
-
-    std::pair<string, float> closestNeighbour();
+    
 
     int x_ = 0;
     int y_ = 0;

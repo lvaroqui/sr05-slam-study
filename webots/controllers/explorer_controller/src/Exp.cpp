@@ -60,7 +60,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             expMessage.add("currentpos", std::to_string(x_) + "," + std::to_string(y_) + "," +
                                          std::to_string(heading_));
             expMessage.add("obs", fromMapToString(unsentMap_));
-	    expMessage.add("clk", fromMapToStringClock(clock_);
+	    expMessage.add("clk", fromMapToStringClock(clock_));
             netMailBox_->push(expMessage);
         }
         netMailBox_->push(mapMessage);
@@ -103,10 +103,10 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 	//Update your clocks according to the received clock
 	std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
 	for (auto clk : receivedClock) {
-		if (clock_.contains(clk.first) && clock_[clk.first] < clk.second){
+		if (clock_.find(clk.first) != clock_.end() && clock_[clk.first] < clk.second){
 			clock_[clk.first] = clk.second;
 		}
-		else if(!clock_.contains(clk.first)){
+		else if(clock_.find(clk.first) == clock_.end()){
 			clock_[clk.first] = clk.second;
 		}
 	}	
@@ -148,7 +148,7 @@ void Exp::updateAndCheckNeighbours() {
     msg.add("typemsg", "helloNeighbour");
     msg.add("xpos", std::to_string(x_));
     msg.add("ypos", std::to_string(y_));
-    msg.add("clk", fromMapToStringClock(clock_);
+    msg.add("clk", fromMapToStringClock(clock_));
 
     netMailBox_->push(msg);
 
