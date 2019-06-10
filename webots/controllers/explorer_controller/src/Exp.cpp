@@ -104,6 +104,9 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 		if (clock_.contains(clk.first) && clock_[clk.first] < clk.second){
 			clock_[clk.first] = clk.second;
 		}
+		else if(!clock_.contains(clk.first)){
+			clock_[clk.first] = clk.second;
+		}
 	}	
     if (msg.getValue("typemsg") == "collisionDetection") {
 		//Increment your clock
