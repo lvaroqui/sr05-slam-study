@@ -64,6 +64,9 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             unsentMap_[point] = pointType::explored;
             map_[point] = pointType::explored;
         } else {
+            std::pair<int, int> point(x_, y_);
+            unsentMap_[point] = pointType::explored;
+            map_[point] = pointType::explored;
             inited = true;
         }
     }

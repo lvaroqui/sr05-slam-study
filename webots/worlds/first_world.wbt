@@ -2,28 +2,17 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.3160621922260576 0.9164547644196342 0.24538817293792164 1.3434863457687938
-  position 2.6250825895453973 1.786112419190212 0.7330977763659694
+  orientation -0.1511013130998585 0.9216757299262087 0.35732652020874245 2.3568491480563165
+  position 2.9604268280934463 3.5492106813977937 -2.67510519938024
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 Pioneer2 {
-  translation 1 0 0
-  name "1"
-  controllerArgs "1"
-  color 0.20392156862745098 0.396078431372549 0.6431372549019608
-}
-Pioneer2 {
   name "2"
   controllerArgs "2"
   color 0.45098039215686275 0.8235294117647058 0.08627450980392157
-}
-Pioneer2 {
-  translation -1 0 0
-  name "3"
-  controllerArgs "3"
 }
 Wall {
   translation 0 0 1
@@ -55,4 +44,9 @@ RectangleArena {
   translation 0.25 0 0.25
   floorSize 20 20
   floorTileSize 1 1
+}
+Pioneer2 {
+  translation 1 0 0
+  name "1"
+  controllerArgs "1"
 }

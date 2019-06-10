@@ -92,15 +92,16 @@ std::map<std::pair<int, int>, pointType> fromStringToMap(std::string const &str)
 
 int coordToMap (int coord)
 {
-    int modulo = coord % ROB_SIZE;
-    int map= coord / ROB_SIZE;
-    if(modulo < ROB_SIZE/2 && modulo > ROB_SIZE/2)
-        map = modulo;
-    else if (modulo <=ROB_SIZE/2)
-        map-- ;
-    else
-        map++;
-
+    int modulo = abs(coord) % ROB_SIZE;
+    int newCoord = abs(coord) / ROB_SIZE;
+    if(modulo > ROB_SIZE/2)
+        newCoord++;
+    if (coord >= 0) {
+        return newCoord;
+    }
+    else {
+        return -newCoord;
+    }
 }
 
 int floorNeg(int num) {

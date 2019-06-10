@@ -271,12 +271,12 @@ public:
             }
 
             // Checking if we reached the desired position
-            if (abs(currentTranslation_ - targetTranslation_) < 0.001 && speedLeft < 0.01) {
+            if (abs(currentTranslation_ - targetTranslation_) < 0.001 && speedLeft < 0.001) {
                 AirplugMessage msg;
 
                 // If we were joining, acknowledging with joined
                 if (joining_) {
-                    msg = RobAck::joinedMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100));
+                    msg = RobAck::joinedMsg((int)round(x_ * 100), (int)round(y_ * 100));
                     joining_ = false;
                 }
                     // If we were moving, acknowledging with moved
@@ -287,8 +287,8 @@ public:
                     msg.add("robcol", "1");
                     collision_ = false;
                 }
-                RobAck::addRobotPosMsg(msg, static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
-                                       static_cast<int>(heading_ * 180.0 / M_PI));
+                RobAck::addRobotPosMsg(msg, (int)round(x_ * 100), (int)round(y_ * 100),
+                                       (int)round(heading_ * 180.0 / M_PI));
                 netMailBox_->push(msg);
                 translating_ = false;
                 stop();
@@ -301,8 +301,8 @@ public:
         // Com
         static int i = 30;
         if (i++ == 30) {
-            netMailBox_->push(RobAck::currMsg(static_cast<int>(x_ * 100), static_cast<int>(y_ * 100),
-                                              static_cast<int>(heading_ * 180.0 / M_PI)));
+            netMailBox_->push(RobAck::currMsg((int)round(x_ * 100), (int)round(y_ * 100),
+                                              (int)round(heading_ * 180.0 / M_PI)));
             i = 0;
         }
         handleInterRobotCommunications();

@@ -16,7 +16,9 @@ PROTO Pioneer2 [
   field SFColor    color 1 0 0
   field MFNode     extensionSlot   [
 					Receiver {}
-					Emitter {}
+					Emitter {
+					    range 12
+					}
 			           ]            # Extends the robot with new nodes in the extension slot.
 ]
 {
