@@ -20,6 +20,7 @@
 #include <map>
 #include <utility>
 #include <limits>
+#include <com/RobOrd.h>
 
 #define TTL_MAX 5
 #define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
@@ -29,10 +30,11 @@ class Exp {
     string id_;
 
     Map map_;
-    Map unsentMap_;
     MailBox *netMailBox_;
     MailBox mailBox_;
     std::thread runner_;
+
+    std::queue<string> actionsQueue;
 
     int x_ = 0;
     int y_ = 0;
@@ -51,6 +53,10 @@ class Exp {
     std::pair<string, float> closestNeighbour();
 
     void reportPoint(int x, int y, pointType type);
+
+    void reportPosToMap();
+
+    void popActionQueue();
 
     void run() {
         int checkNeighbours = 0;
@@ -78,6 +84,10 @@ class Exp {
 
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
+        // Exemple d'action queue
+        actionsQueue.push("move:50");
+        actionsQueue.push("turn:90");
+        actionsQueue.push("move:50");
     }
 
     ~Exp() {
@@ -89,6 +99,8 @@ public:
     MailBox *getMailBox() {
         return &mailBox_;
     }
+
+
 };
 
 

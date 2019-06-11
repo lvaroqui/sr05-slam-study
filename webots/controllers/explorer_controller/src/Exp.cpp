@@ -37,17 +37,10 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             reportPoint(wall.first, wall.second, pointType::wall);
         }
         else {
-            AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
-            mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
-                                     std::to_string(heading_));
-            mapMessage.add("obs", "");
-            netMailBox_->push(mapMessage);
+            reportPosToMap();
         }
-
-
-        // No more pending messages, we clear the temporary Map
-        unsentMap_.clear();
-    } else if (ra.getType() == RobAck::curr) {
+    }
+    else if (ra.getType() == RobAck::curr) {
         x_ = coordToMap(ra.getCommand()[0]);
         y_ = coordToMap(ra.getCommand()[1]);
         heading_ = coordToMap(ra.getCommand()[2]);
@@ -56,6 +49,10 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         if (map_.find(point) == map_.end() || map_[point] != pointType::explored) {
             reportPoint(point.first, point.second, pointType::explored);
             map_[std::make_pair(x_, y_)] = pointType::explored;
+        }
+
+        if (msg.getValue("inAction") == "0") {
+            popActionQueue();
         }
     }
 }
@@ -175,6 +172,15 @@ std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, i
     return points;
 }
 
+void Exp::reportPosToMap() {
+    AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+    mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                             std::to_string(heading_));
+    mapMessage.add("obs", "");
+    netMailBox_->push(mapMessage);
+}
+
+
 void Exp::reportPoint(int x, int y, pointType type) {
     AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
     mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
@@ -186,4 +192,13 @@ void Exp::reportPoint(int x, int y, pointType type) {
     expMessage.add("typemsg", "infos");
     expMessage.add("obs", std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(type));
     netMailBox_->push(expMessage);
+}
+
+void Exp::popActionQueue() {
+    if (!actionsQueue.empty()) {
+        AirplugMessage msgOrd("EXP", "ROB", AirplugMessage::local);
+        msgOrd.add("robord", actionsQueue.front());
+        actionsQueue.pop();
+        netMailBox_->push(msgOrd);
+    }
 }

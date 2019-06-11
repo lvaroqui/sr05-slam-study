@@ -301,8 +301,15 @@ public:
         // Com
         static int i = 30;
         if (i++ == 30) {
-            netMailBox_->push(RobAck::currMsg((int)round(x_ * 100), (int)round(y_ * 100),
-                                              (int)round(heading_ * 180.0 / M_PI)));
+            AirplugMessage msg = RobAck::currMsg((int)round(x_ * 100), (int)round(y_ * 100),
+                                                 (int)round(heading_ * 180.0 / M_PI));
+            if (translating_ || rotating_) {
+                msg.add("inAction", "1");
+            }
+            else {
+                msg.add("inAction", "0");
+            }
+            netMailBox_->push(msg);
             i = 0;
         }
         handleInterRobotCommunications();
