@@ -127,7 +127,6 @@ void Exp::handleExpMessage(AirplugMessage msg) {
     } 
 	else if (msg.getValue("typemsg") == "fusionMap") {
 		if (id_ == msg.getValue("dest")){
-			string sender = msg.getValue("sender");
 			Map receivedMap = fromStringToMap(msg.getValue("obs"));
 			
 			for (auto const& pt : receivedMap){
