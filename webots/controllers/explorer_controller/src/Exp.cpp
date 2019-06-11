@@ -144,18 +144,44 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 				}
 			}
 			
+			mapMerged_ = true;
+			
+			// diffuse to neighbours
 			AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
 			expMessage.add("typemsg", "mergedMap");
 			expMessage.add("sender", id_);
-			expMessage.add("dest", sender);
 			expMessage.add("obs", fromMapToString(map_));
 			expMessage.add("clk", fromMapToStringClock(clock_));
 			netMailBox_->push(expMessage);
 		}
 	}
 	else if (msg.getValue("typemsg") == "mergedMap") {
-        if (id_ == msg.getValue("dest")){
-			map_ = fromStringToMap(msg.getValue("obs"));
+		if (!mapMerged_){
+			receivedMap = fromStringToMap(msg.getValue("obs"));
+			
+			for (auto const& pt : receivedMap){
+				if ( map_.find(pt.first) == map_.end() ){
+					// if point exists on received map while it is not on the local map
+					
+					//add missing point
+					map_[pt.first] = pt.second;
+				}
+				else {
+					if (map_[pt.first] != pt.second){
+						map_[pt.first] = pointType::wall;
+					}
+				}
+			}
+			
+			mapMerged_ = true;
+			
+			// diffuse to neighbours
+			AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
+			expMessage.add("typemsg", "mergedMap");
+			expMessage.add("sender", id_);
+			expMessage.add("obs", fromMapToString(map_));
+			expMessage.add("clk", fromMapToStringClock(clock_));
+			netMailBox_->push(expMessage);
 		}
     }
 	else if(msg.getValue("typemsg") == "helloNeighbour") {
