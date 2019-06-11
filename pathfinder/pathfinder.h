@@ -5,6 +5,7 @@
 #include <utility>
 #include <map>
 #include <set>
+#include "../monitor/utils.h"
 
 #ifndef ROBOT_LENGTH
 #define ROBOT_LENGTH 1
@@ -32,7 +33,7 @@ inline bool operator < (const Node& lhs, const Node& rhs)
 
 class Pathfinder
 {
-private:
+public:
     std::map<std::pair<float,float>, Node> _nodeMap;
     std::map<std::pair<float,float>,float> _cacheHeuristic;
     float calculateHeuristic(const std::pair<float, float> &pos, const std::pair<float, float> &end);
@@ -42,9 +43,9 @@ private:
 public:
     Pathfinder();
     void resetMap();
-    void mapToNodeMap(const std::list<std::pair<float,float>> &map);
-    std::list<std::pair<float, float>> findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest);
-    std::list<std::pair<float, float>> goHome(const std::pair<float, float> &pos);
+    void mapToNodeMap(const std::map<std::pair<float,float>, pointType> &map);
+    std::list<std::pair<float, float>> findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest, bool onlyUsed = false);
+    std::list<std::pair<float, float>> goHome(const std::pair<float, float> &pos, bool onlyUsed = false);
 };
 
 #endif // PATHFINDER_H
