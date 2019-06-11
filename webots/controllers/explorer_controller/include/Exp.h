@@ -38,7 +38,6 @@ class Exp {
     int y_ = 0;
     int heading_ = 0;
     bool inited = false;
-	bool mapMerged_ = false;
 
     std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
 
