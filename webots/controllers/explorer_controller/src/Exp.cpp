@@ -118,7 +118,7 @@ void Exp::handleExpMessage(AirplugMessage msg) {
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
     } else if(msg.getValue("typemsg") == "helloNeighbour") {
-        // Update from a neighbour, sending us is position
+        // Update from a neighbour, sending us his position
         string sender = msg.getValue("sender");
         int x = std::stoi(msg.getValue("xpos"));
         int y = std::stoi(msg.getValue("ypos"));
