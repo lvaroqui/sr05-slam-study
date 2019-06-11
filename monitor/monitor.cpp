@@ -204,6 +204,7 @@ Monitor::Monitor() : Application("MAP"), _robot(nullptr)
 
     _mapView->setSizePolicy(spRight);
     _mapView->setObjectName("Map");
+    _mapView->setDragMode(QGraphicsView::ScrollHandDrag);
 
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(monitor);

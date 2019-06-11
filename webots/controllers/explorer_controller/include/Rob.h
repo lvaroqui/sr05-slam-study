@@ -265,18 +265,18 @@ public:
             }
 
             // Detecting collisions
-            if (minDistance > 790 && currentTranslation_ < targetTranslation_ && !collision_) {
+            if (minDistance > 770 && currentTranslation_ < targetTranslation_ && !collision_) {
                 targetTranslation_ = currentTranslation_ + 0.01;
                 collision_ = true;
             }
 
             // Checking if we reached the desired position
-            if (abs(currentTranslation_ - targetTranslation_) < 0.001 && speedLeft < 0.001) {
+            if (speedLeft < 0.001 && (abs(currentTranslation_ - targetTranslation_) < 0.001 || collision_)) {
                 AirplugMessage msg;
 
                 // If we were joining, acknowledging with joined
                 if (joining_) {
-                    msg = RobAck::joinedMsg((int)round(x_ * 100), (int)round(y_ * 100));
+                    msg = RobAck::joinedMsg((int) round(x_ * 100), (int) round(y_ * 100));
                     joining_ = false;
                 }
                     // If we were moving, acknowledging with moved
@@ -287,8 +287,8 @@ public:
                     msg.add("robcol", "1");
                     collision_ = false;
                 }
-                RobAck::addRobotPosMsg(msg, (int)round(x_ * 100), (int)round(y_ * 100),
-                                       (int)round(heading_ * 180.0 / M_PI));
+                RobAck::addRobotPosMsg(msg, (int) round(x_ * 100), (int) round(y_ * 100),
+                                       (int) round(heading_ * 180.0 / M_PI));
                 netMailBox_->push(msg);
                 translating_ = false;
                 stop();
@@ -301,12 +301,11 @@ public:
         // Com
         static int i = 30;
         if (i++ == 30) {
-            AirplugMessage msg = RobAck::currMsg((int)round(x_ * 100), (int)round(y_ * 100),
-                                                 (int)round(heading_ * 180.0 / M_PI));
+            AirplugMessage msg = RobAck::currMsg((int) round(x_ * 100), (int) round(y_ * 100),
+                                                 (int) round(heading_ * 180.0 / M_PI));
             if (translating_ || rotating_) {
                 msg.add("inAction", "1");
-            }
-            else {
+            } else {
                 msg.add("inAction", "0");
             }
             netMailBox_->push(msg);

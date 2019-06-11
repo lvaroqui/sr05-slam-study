@@ -8,7 +8,8 @@
 #define ROB_SIZE 50
 enum pointType {
     wall,
-    explored
+    explored,
+    unexplored
 };
 
 typedef std::map<std::pair<int, int>, pointType > Map;

@@ -18,17 +18,14 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         y_ = coordToMap(std::stoi(tmp[1]));
         heading_ = std::stoi(tmp[2]);
 
-        // Preparing message for monitor APP
+        bool collision = !msg.getValue("robcol").empty();
 
         // If a collision is detected
-        if (!msg.getValue("robcol").empty()) {
+        if (collision) {
             std::vector<std::pair<int, int>> points;
 
             // Wall
-            std::pair<int, int> wall = std::make_pair(
-                    x_ + floorNeg(1.5 * cos(heading_ * M_PI / 180)),
-                    y_ + floorNeg(1.5 * sin(heading_ * M_PI / 180))
-            );
+            std::pair<int, int> wall = getPoint(front);
 
             // Adding wall to map
             map_[wall] = pointType::wall;
@@ -39,6 +36,8 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         else {
             reportPosToMap();
         }
+        handleWallFollowing(collision);
+
     }
     else if (ra.getType() == RobAck::curr) {
         x_ = coordToMap(ra.getCommand()[0]);
@@ -52,7 +51,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         }
 
         if (msg.getValue("inAction") == "0") {
-            popActionQueue();
+            popActionsQueue();
         }
     }
 }
@@ -194,11 +193,91 @@ void Exp::reportPoint(int x, int y, pointType type) {
     netMailBox_->push(expMessage);
 }
 
-void Exp::popActionQueue() {
+void Exp::popActionsQueue() {
     if (!actionsQueue.empty()) {
         AirplugMessage msgOrd("EXP", "ROB", AirplugMessage::local);
         msgOrd.add("robord", actionsQueue.front());
         actionsQueue.pop();
         netMailBox_->push(msgOrd);
+    }
+}
+
+void Exp::clearActionsQueue() {
+    while (!actionsQueue.empty()) {
+        actionsQueue.pop();
+    }
+}
+
+pointType Exp::getPointType(Exp::direction dir) {
+    std::pair<int, int> point = getPoint(dir);
+    if (map_.find(point) == map_.end()) {
+        return pointType::unexplored;
+    }
+    else {
+        return map_[point];
+    }
+}
+
+std::pair<int, int> Exp::getPoint(Exp::direction dir) {
+    double angle = heading_ * M_PI / 180;
+    switch (dir) {
+        case front:
+            break;
+        case back:
+            angle = -angle;
+            break;
+        case right:
+            angle += (M_PI / 2);
+            break;
+        case left:
+            angle -= (M_PI / 2);
+            break;
+    }
+    std::pair<int, int> point = std::make_pair(
+            x_ + floorNeg(1.5 * cos(angle)),
+            y_ + floorNeg(1.5 * sin(angle)));
+    return point;
+}
+
+void Exp::handleWallFollowing(bool collision) {
+    if (followWall_) {
+        // On a longé le mur "tout droit"
+        if (collision && actionsQueue.empty() && getPointType(right) != wall) {
+            if (getPointType(left) != unexplored) {
+                followWall_ = false;
+            }
+            else {
+                actionsQueue.push("turn:90");
+                actionsQueue.push("move:50");
+                actionsQueue.push("turn:-90");
+                actionsQueue.push("move:50");
+            }
+        }
+            // On est arrivé à un bord "sortant" du mur
+        else if (actionsQueue.empty() && getPointType(right) == wall) {
+            if (getPointType(front) != unexplored) {
+                followWall_ = false;
+            }
+            else {
+                actionsQueue.push("turn:-90");
+                actionsQueue.push("move:50");
+            }
+
+        }
+            // On est dans un coin
+        else if (collision && actionsQueue.size() == 2) {
+            auto wall = getPoint(right);
+            reportPoint(wall.first, wall.second, pointType::wall);
+            clearActionsQueue();
+            if (getPointType(left) != unexplored) {
+                followWall_ = false;
+            }
+            else {
+                actionsQueue.push("turn:90");
+                actionsQueue.push("move:50");
+                actionsQueue.push("turn:-90");
+                actionsQueue.push("move:50");
+            }
+        }
     }
 }

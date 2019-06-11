@@ -36,6 +36,8 @@ class Exp {
 
     std::queue<string> actionsQueue;
 
+    bool followWall_ = true;
+
     int x_ = 0;
     int y_ = 0;
     int heading_ = 0;
@@ -56,7 +58,9 @@ class Exp {
 
     void reportPosToMap();
 
-    void popActionQueue();
+    void popActionsQueue();
+
+    void clearActionsQueue();
 
     void run() {
         int checkNeighbours = 0;
@@ -76,18 +80,28 @@ class Exp {
                 checkNeighbours = 0;
                 updateAndCheckNeighbours();
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
     std::vector<std::pair<int, int>> getPointsBetween(int x1, int y1, int x2, int y2);
 
+    enum direction {
+        front,
+        back,
+        right,
+        left,
+    };
+
+    std::pair<int, int> getPoint(direction dir);
+
+    pointType getPointType(direction dir = front);
+
+    void handleWallFollowing(bool collision);
+
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
-        // Exemple d'action queue
-        actionsQueue.push("move:50");
-        actionsQueue.push("turn:90");
-        actionsQueue.push("move:50");
+
     }
 
     ~Exp() {
