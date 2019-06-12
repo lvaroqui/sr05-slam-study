@@ -33,19 +33,19 @@ inline bool operator < (const Node& lhs, const Node& rhs)
 
 class Pathfinder
 {
-public:
-    std::map<std::pair<float,float>, Node> _nodeMap;
-    std::map<std::pair<float,float>,float> _cacheHeuristic;
-    float calculateHeuristic(const std::pair<float, float> &pos, const std::pair<float, float> &end);
-    float heavyHeuristic(const std::pair<float, float> &pos, const std::pair<float, float> &end);
-    float heuristic(const std::pair<float,float> &pos, const std::pair<float,float> &end);
-    std::pair<float,float> smallestFInOpenSet(const std::set<std::pair<float, float> > &openSet) const;
+private:
+    std::map<std::pair<int,int>, Node> _nodeMap;
+    std::map<std::pair<int,int>,float> _cacheHeuristic;
+    float calculateHeuristic(const std::pair<int, int> &pos, const std::pair<int, int> &end);
+    float heavyHeuristic(const std::pair<int, int> &pos, const std::pair<int, int> &end);
+    float heuristic(const std::pair<int,int> &pos, const std::pair<int,int> &end);
+    std::pair<int,int> smallestFInOpenSet(const std::set<std::pair<int, int> > &openSet) const;
 public:
     Pathfinder();
     void resetMap();
-    void mapToNodeMap(const std::map<std::pair<float,float>, pointType> &map);
-    std::list<std::pair<float, float>> findPath(const std::pair<float, float> &pos, const std::pair<float, float> &dest, bool onlyUsed = false);
-    std::list<std::pair<float, float>> goHome(const std::pair<float, float> &pos, bool onlyUsed = false);
+    void mapToNodeMap(const std::map<std::pair<int,int>, pointType> &map);
+    std::list<std::pair<int, int>> findPath(const std::pair<int, int> &pos, const std::pair<int, int> &dest, bool onlyUsed = false);
+    std::list<std::pair<int, int> > goHome(const std::pair<int, int> &pos, bool onlyUsed = false);
 };
 
 #endif // PATHFINDER_H
