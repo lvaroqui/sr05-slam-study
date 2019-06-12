@@ -13,7 +13,7 @@ int main()
 //    std::cout<< path.heuristic2(std::pair<int,int>(2,3),std::pair<int,int>(-3,5))<< std::endl;
 
 //    return 0;
-    std::map<std::pair<int,int>, pointType> map;
+    Map map;
     //map.insert(map.begin(), std::pair<int,int>(1,1));
 //    map.insert(map.begin(), std::pair<int,int>(4,1));
 //    map.insert(map.begin(), std::pair<int,int>(4,-1));
@@ -78,7 +78,10 @@ int main()
 //    }
     Pathfinder path2;
     path2.mapToNodeMap(map);
-    path2.findPath(std::pair<int,int>(5,6), std::pair<int,int>(9,9));
+    auto newpath = path2.findPath(std::pair<int,int>(5,6), std::pair<int,int>(9,9));
+    for(auto a : newpath) {
+        cout << a.first << a.second << "-";
+    }
     //path2.findPath(std::pair<int,int>(6,0), std::pair<int,int>(8,0));
    // path.goHome(std::pair<int,int>(1,0));
 //    opset.insert(std::pair<int,int>(4,-1));

@@ -1,6 +1,6 @@
 #include "pathfinder.h"
 
-#include "../monitor/utils.h"
+//#include "../monitor/utils.h"
 #include <limits>
 #include <iostream>
 #include <cmath>
@@ -16,10 +16,8 @@ Pathfinder::Pathfinder()
 float Pathfinder::calculateHeuristic(const std::pair<int, int> &pos, const std::pair<int, int> &end) {
     int newx = std::abs(pos.first-end.first);
     int newy = std::abs(pos.second-end.second);
-    float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
-    float t2 = std::abs(newx-newy);
     //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
-    return (std::max(newx,newy)-std::abs(newx-newy))*1.4+std::abs(newx-newy);
+    return (std::max(newx,newy)-std::abs(newx-newy))*1.4f+std::abs(newx-newy);
 }
 
 float Pathfinder::heavyHeuristic(const std::pair<int,int> &pos, const std::pair<int,int> &end) {
@@ -155,7 +153,7 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
         closedSet.insert(shortest);
         for(int i = -1; i<=1;i++) {
             for(int j = -1; j <= 1; j++) {
-                if(i==0 && j==0) {
+                if(std::abs(i) == std::abs(j)) {
                     continue;
                 }
                 auto newCoord = std::pair<int,int>(shortest.first+i,shortest.second+j);
@@ -164,7 +162,7 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
                     continue;
                 }
                 auto it = _nodeMap.find(newCoord);
-                float newGCost = current->second.gCost + (i==0 || j ==0 ? 1.0 : 1.4);
+                float newGCost = current->second.gCost + (i==0 || j ==0 ? 1.0f : 1.4f);
                 if(it != _nodeMap.end()) {
                     if(it->second.gCost <= newGCost && it->second.hCost != -FLT_MAX) {
                         continue;
