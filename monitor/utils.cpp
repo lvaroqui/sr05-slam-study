@@ -158,17 +158,37 @@ void findFrontiers(Map &map) {
     }
 }
 
-std::pair<int, int> findClosestFrontier(const Map& map, const std::pair<int, int>& position) {
-    std::pair<int, int> bestFrontier;
+bool findClosestFrontier(const Map &map, const std::pair<int, int> &position, std::pair<int, int> &bestFrontier) {
+    bool found= false;
     double minDist = std::numeric_limits<double>::max();
+    double wallNum = 0;
     for(auto point : map) {
         if(point.second == frontier) {
+            found = true;
             double dist = std::sqrt(std::pow(point.first.first-position.first, 2) + std::pow(point.first.second-position.second, 2));
-            if(dist < minDist) {
-                minDist = dist;
-                bestFrontier = point.first;
+            if(dist <= minDist) {
+                int walls = 0;
+                for(int i = -1; i < 2; i++) {
+                    for(int j = -1; j < 2; j++) {
+                        std::pair<int, int> coords = std::pair<int, int>(point.first.first + i, point.first.second + j);
+                        auto it = map.find(coords);
+                        if(it != map.end() && it->second == wall) {
+                            walls++;
+                        }
+                    }
+                }
+                if (dist < minDist) {
+                    wallNum = walls;
+                    minDist = dist;
+                    bestFrontier = point.first;
+                }
+                else if (walls > wallNum) {
+                    wallNum = walls;
+                    minDist = dist;
+                    bestFrontier = point.first;
+                }
             }
         }
     }
-    return bestFrontier;
+    return found;
 }

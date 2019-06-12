@@ -41,7 +41,8 @@ class Exp {
         standBy,
         followingWall,
         joiningNeighboor,
-        exploring
+        exploring,
+        finished
     };
 
     status status_ = standBy;
@@ -75,6 +76,8 @@ class Exp {
 
     void reportPoint(int x, int y, pointType type);
 
+    void reportPointToMap(int x, int y, pointType type);
+
     void reportPosToMap();
 
     void popActionsQueue();
@@ -97,11 +100,20 @@ class Exp {
             }
             if (status_ == standBy) {
                 findFrontiers(map_);
-                auto point = findClosestFrontier(map_, std::make_pair(x_, y_));
+                std::pair<int, int> point;
+                findClosestFrontier(map_, std::make_pair(x_, y_), point);
                 if (x_ != point.first || y_ != point.second) {
                     status_ = exploring;
                     std::cout << "Next point to explore :" << point.first << " " << point.second << std::endl;
-                    goToPathFinding(point.first, point.second);
+                    while (!goToPathFinding(point.first, point.second)) {
+                        map_[point] = wall;
+                        findFrontiers(map_);
+                        if (!findClosestFrontier(map_, std::make_pair(x_, y_), point)) {
+                            std::cout << "FINISHED !" << std::endl;
+                            status_ = finished;
+                            break;
+                        }
+                    }
                 }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -125,7 +137,7 @@ class Exp {
 
     void handleWallFollowing(bool collision);
 
-    void goToPathFinding(int x, int y);
+    bool goToPathFinding(int x, int y);
 
 public:
     Exp(string

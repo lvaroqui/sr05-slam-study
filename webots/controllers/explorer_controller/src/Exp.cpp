@@ -63,7 +63,15 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 void Exp::handleExpMessage(AirplugMessage msg) {
     if (msg.getValue("typemsg") == "infos") {
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
-        map_.insert(receivedMap.begin(), receivedMap.end());
+        for (auto points : receivedMap) {
+            map_[points.first] = points.second;
+        }
+
+        AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+        mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                                 std::to_string(heading_));
+        mapMessage.add("obs", msg.getValue("obs"));
+        netMailBox_->push(mapMessage);
     } else if (msg.getValue("typemsg") == "helloNeighbour") {
         // Update from a neighbour, sending us his position
         string sender = msg.getValue("sender");
@@ -183,6 +191,14 @@ void Exp::reportPosToMap() {
     netMailBox_->push(mapMessage);
 }
 
+void Exp::reportPointToMap(int x, int y, pointType type) {
+    AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
+    mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
+                             std::to_string(heading_));
+    mapMessage.add("obs", "");
+    netMailBox_->push(mapMessage);
+}
+
 void Exp::reportPoint(int x, int y, pointType type) {
     AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
     mapMessage.add("roback", "curr:" + std::to_string(x_) + "," + std::to_string(y_) + "," +
@@ -275,14 +291,18 @@ void Exp::handleWallFollowing(bool collision) {
     }
 }
 
-void Exp::goToPathFinding(int x, int y) {
+bool Exp::goToPathFinding(int x, int y) {
     clearActionsQueue();
     Pathfinder pathfinder;
     pathfinder.mapToNodeMap(map_);
     auto path = pathfinder.findPath(std::make_pair(x_, y_), std::make_pair(x, y));
+    if (path.empty()) {
+        return false;
+    }
     for (auto point : path) {
         if (x_ != point.first || y_ != point.second) {
             actionsQueue.push("join:" + std::to_string(point.first * 50) + "," + std::to_string(point.second * 50));
         }
     }
+    return true;
 }

@@ -33,6 +33,6 @@ int floorNeg(int num);
 int coordToMap (int coord);
 
 void findFrontiers(Map &map);
-std::pair<int, int> findClosestFrontier(const Map& map, const std::pair<int, int>& position);
+bool findClosestFrontier(const Map &map, const std::pair<int, int> &position, std::pair<int, int> &bestFrontier);
 
 #endif // UTILS_H

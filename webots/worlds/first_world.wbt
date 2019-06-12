@@ -88,6 +88,17 @@ Floor {
   tileSize 1 1
 }
 Pioneer2 {
+  translation 0 0 -3
+  name "2"
+  controllerArgs "2"
+}
+Pioneer2 {
   name "1"
   controllerArgs "1"
+  extensionSlot [
+    Receiver {
+    }
+    Emitter {
+    }
+  ]
 }

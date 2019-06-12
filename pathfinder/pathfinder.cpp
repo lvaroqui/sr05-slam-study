@@ -117,7 +117,7 @@ std::list<std::pair<int, int>> Pathfinder::goHome(const std::pair<int,int> &pos,
     return findPath(pos, std::pair<int,int>(0,0), onlyUsed);
 }
 
-std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &pos, const std::pair<int, int> &dest, bool onlyUsed) {
+std::list<std::pair<int, int>> Pathfinder::findPath(const std::pair<int, int> &pos, const std::pair<int, int> &dest, bool onlyUsed) {
     std::set<std::pair<int,int>> openSet, closedSet;
 //  std::map<std::pair<int,int>,std::pair<int,int>> cameFrom;
     openSet.insert(pos);
@@ -188,7 +188,6 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
             }
         }
     }
-    std::cout << "Didn't find a path" << std::endl;
     return std::list<std::pair<int,int>>();
 }
 
