@@ -121,7 +121,7 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 		AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
 		expMessage.add("typemsg", "fusionMap");
 		expMessage.add("sender", id_);
-		expMessage.add("dest", msg.getValue("sender");
+		expMessage.add("dest", msg.getValue("sender"));
 		expMessage.add("obs", fromMapToString(map_));
 		expMessage.add("clk", fromMapToStringClock(clock_));
 		netMailBox_->push(expMessage);
@@ -151,7 +151,7 @@ void Exp::handleExpMessage(AirplugMessage msg) {
 			AirplugMessage expMessage("EXP", "EXP", AirplugMessage::air);
 			expMessage.add("typemsg", "fusionMap");
 			expMessage.add("sender", id_);
-			expMessage.add("dest", msg.getValue("sender");
+			expMessage.add("dest", msg.getValue("sender"));
 			expMessage.add("obs", fromMapToString(map_));
 			expMessage.add("clk", fromMapToStringClock(clock_));
 			netMailBox_->push(expMessage);
