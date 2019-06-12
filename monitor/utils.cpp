@@ -149,9 +149,8 @@ void findFrontiers(Map &map) {
             for(int i = -1; i < 2; i++) {
                 for(int j = -1; j < 2; j++) {
                     std::pair<int, int> coords = std::pair<int, int>(point.first.first + i, point.first.second + j);
-                    auto it = map.find(coords);
-                    if(it != map.end() && it->second == unexplored) {
-                        it->second = frontier;
+                    if(map.find(coords) == map.end()) {
+                        map[coords] = frontier;
                     }
                 }
             }

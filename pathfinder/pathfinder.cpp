@@ -75,7 +75,7 @@ void Pathfinder::mapToNodeMap(const std::map<std::pair<int, int>, pointType> &ma
 //        test.insert(newPoint);
     }
     for(auto point = _nodeMap.begin(); point != _nodeMap.end(); ++point) {
-        std::cout << "x : " << point->first.first << "y : " << point->first.second <<std::endl;
+//        std::cout << "x : " << point->first.first << "y : " << point->first.second <<std::endl;
     }
 //    auto node = test.find(std::pair<int,int>(0,1));
 //    if(node != test.end()) {

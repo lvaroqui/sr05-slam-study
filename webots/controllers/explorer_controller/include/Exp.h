@@ -41,6 +41,7 @@ class Exp {
         standBy,
         followingWall,
         joiningNeighboor,
+        exploring,
         pathFindingNavigation
     };
 
@@ -94,6 +95,14 @@ class Exp {
                 } else if (msg.getEmissionApp() == "MAP") {
                     handleMapMessage(msg);
                 }
+            }
+            if (status_ == standBy) {
+                status_ = exploring;
+                findFrontiers(map_);
+                std::cout << fromMapToString(map_) << std::endl;
+                auto point = findClosestFrontier(map_, std::make_pair(x_, y_));
+                std::cout << "Next point to explore :" << point.first << " " << point.second << std::endl;
+                goToPathFinding(point.first, point.second);
             }
 //            if (checkNeighbours++ == CHECK_NEIGHBOURS_RATE) {
 //                checkNeighbours = 0;

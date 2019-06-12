@@ -37,7 +37,8 @@ void Exp::handleRobMessage(AirplugMessage msg) {
             reportPosToMap();
         }
         handleWallFollowing(collision);
-        if (status_ == joiningNeighboor) {
+        if (status_ == exploring && actionsQueue.empty()) {
+            std::cout << "Back to stand by" << std::endl;
             status_ = standBy;
         }
 
@@ -54,11 +55,6 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 
         if (msg.getValue("inAction") == "0") {
             popActionsQueue();
-        }
-        static bool init = false;
-        if(!init && id_ == "1") {
-            init = true;
-            goToPathFinding(9,9);
         }
     }
 }
