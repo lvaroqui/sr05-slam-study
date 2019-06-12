@@ -21,7 +21,9 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         bool collision = !msg.getValue("robcol").empty();
 
         // If a collision is detected
-        if (collision) {
+         if (collision) {
+		    clock_[id_]++;
+       
             std::vector<std::pair<int, int>> points;
 
             // Wall
@@ -57,11 +59,25 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 }
 
 void Exp::handleExpMessage(AirplugMessage msg) {
+    
+
+	//Update your clocks according to the received clock
+	std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
+	for (auto clk : receivedClock) {
+		if (clock_.find(clk.first) != clock_.end() && clock_[clk.first] < clk.second){
+			clock_[clk.first] = clk.second;
+		}
+		else if(clock_.find(clk.first) == clock_.end()){
+			clock_[clk.first] = clk.second;
+		}
+	}	
     if (msg.getValue("typemsg") == "infos") {
+		//Increment your clock
+		clock_[id_]++;
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
-    } else if (msg.getValue("typemsg") == "helloNeighbour") {
-        // Update from a neighbour, sending us is position
+    } else if(msg.getValue("typemsg") == "helloNeighbour") {
+        // Update from a neighbour, sending us his position
         string sender = msg.getValue("sender");
         int x = std::stoi(msg.getValue("xpos"));
         int y = std::stoi(msg.getValue("ypos"));
@@ -91,36 +107,43 @@ void Exp::updateAndCheckNeighbours() {
     msg.add("typemsg", "helloNeighbour");
     msg.add("xpos", std::to_string(x_));
     msg.add("ypos", std::to_string(y_));
+    msg.add("clk", fromMapToStringClock(clock_));
+
     netMailBox_->push(msg);
 
-    // Then, for each neigbour we have, we update their TTL
-    int disappearedNeighbours = 0;
-    for (auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-        int ttlValue = --it->second.first;
-        if (ttlValue == 0)
-            disappearedNeighbours++;
-    }
+    // The remaining operations are only done if we have at least 1 neighbour registered
+    if(neighbours_.size() > 0) {
+        // For each neigbour we have, we update their TTL
+        int disappearedNeighbours = 0;
+        for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
+            int ttlValue = --it->second.first;
+            if(ttlValue == 0)
+                disappearedNeighbours++;
+        }
 
-    // We check if we are still OK or too far away from other robots    
-    if (disappearedNeighbours == neighbours_.size()) {
-        // We don't have any neighbour anymore : we must come back to the closest one
+        // We check if we are still OK or too far away from other robots
         auto bestNeighbour = closestNeighbour();
-        //TODO : get back towards him
-    } else {
-        // We still have at least 1 neighbour : we check if we are not too far away from the closest one
-        auto closestNeighbor = closestNeighbour();
-        //TODO : check if closestNeighbor->second > WARNING_DISTANCE (to define)
-        //and, if so, get back towards him
-    }
+        if(disappearedNeighbours == neighbours_.size()) {
+            // We don't have any neighbour anymore : we must come back to the closest one
+            // Note: we artificially reset its TTL in order to keep it in the list
+            neighbours_[bestNeighbour.first].second.first = TTL_MAX;
+            goTowardsNeighbour(bestNeighbour);
+        } else {
+            // We still have at least 1 neighbour : we check if we are not too far away from the closest one
+            if(bestNeighbour.second > WARNING_DISTANCE) {
+                // We are too far away : we have to go back towards him
+                goTowardsNeighbour(bestNeighbour);
+            }
+        }
 
-    // Finally, if some neighbours have disappeared, we clean them
-    if (disappearedNeighbours) {
-        // Some neighbours (but not all) have disappeared : we remove them
-        for (auto it = neighbours_.begin(); it != neighbours_.end();) {
-            if (it->second.first == 0) {
-                it = neighbours_.erase(it);
-            } else {
-                ++it;
+        // Finally, if some neighbours have disappeared, we clean them
+        if(disappearedNeighbours) {
+            for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
+                if(it->second.first == 0) {
+                    it = neighbours_.erase(it);
+                } else {
+                    ++it;
+                }
             }
         }
     }
@@ -138,6 +161,26 @@ std::pair<string, float> Exp::closestNeighbour() {
     }
     std::pair<string, float> closest(closestNeighbourName, shortestDistance);
     return closest;
+}
+
+void Exp::goTowardsNeighbour(std::pair<string, float> neighbour) {
+    // We collect the neighbour's last known coordinates
+    int neighbourX = neighbours_[neighbour.first].second.first;
+    int neighbourY = neighbours_[neighbour.first].second.second;
+
+    // We compute the coordinates we want to go to (because of the safe distance to avoid collision)
+    float currentDistance = neighbour.second;
+    float ratio = SAFE_DISTANCE / currentDistance;
+    int safeXDistance = static_cast<int>(round((x_-neighbourX) * ratio));
+    int safeYDistance = static_cast<int>(round((y_-neighbourY) * ratio));
+    int safeX = neighbourX + safeXDistance;
+    int safeY = neighbourY + safeYDistance;
+
+    // We create the message then send it to ROB
+    AirplugMessage msg("EXP", "ROB", AirplugMessage::local);
+    string command = "join:" + std::to_string(safeX) + "," + std::to_string(safeY);
+    msg.add("robord", command);
+    netMailBox_->push(msg);
 }
 
 std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, int y2) {

@@ -24,6 +24,8 @@
 
 #define TTL_MAX 5
 #define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
+#define WARNING_DISTANCE 24 // 24*50 = 1200cm = 12m
+#define SAFE_DISTANCE 4 // 4*50 = 200cm = 2m
 
 class Exp {
     bool run_ = true;
@@ -53,6 +55,9 @@ class Exp {
     void updateAndCheckNeighbours();
 
     std::pair<string, float> closestNeighbour();
+	std::map<std::string, int> clock_;
+
+    void goTowardsNeighbour(std::pair<string, float> neighbour);
 
     void reportPoint(int x, int y, pointType type);
 
@@ -101,7 +106,7 @@ class Exp {
 
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
-
+		clock_[id_] = 0;
     }
 
     ~Exp() {
