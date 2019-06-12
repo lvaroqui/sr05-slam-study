@@ -16,6 +16,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <math.h>
 #include "../../../../monitor/utils.h"
+#include "../../../../pathfinder/pathfinder.h"
 #include <chrono>
 #include <map>
 #include <utility>
@@ -24,8 +25,6 @@
 
 #define TTL_MAX 3
 #define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
-#define WARNING_DISTANCE 24 // 24*50 = 1200cm = 12m
-#define SAFE_DISTANCE 4 // 4*50 = 200cm = 2m
 
 class Exp {
     bool run_ = true;
@@ -42,6 +41,7 @@ class Exp {
         standBy,
         followingWall,
         joiningNeighboor,
+        pathFindingNavigation
     };
 
     status status_ = standBy;
@@ -53,7 +53,9 @@ class Exp {
     class Neighbour {
     public:
         Neighbour() = default;
-        Neighbour(int TTL, int X, int Y): ttl(TTL), x(X), y(Y) {}
+
+        Neighbour(int TTL, int X, int Y) : ttl(TTL), x(X), y(Y) {}
+
         int ttl;
         int x;
         int y;
@@ -69,7 +71,7 @@ class Exp {
 
     void updateAndCheckNeighbours();
 
-    Neighbour & closestNeighbour();
+    Neighbour &closestNeighbour();
 
     void reportPoint(int x, int y, pointType type);
 
@@ -80,7 +82,7 @@ class Exp {
     void clearActionsQueue();
 
     void run() {
-        int checkNeighbours = 0;
+//        int checkNeighbours = 0;
         while (run_) {
             while (mailBox_.size() > 0) {
                 AirplugMessage msg = mailBox_.pop();
@@ -93,10 +95,10 @@ class Exp {
                     handleMapMessage(msg);
                 }
             }
-            if (checkNeighbours++ == CHECK_NEIGHBOURS_RATE) {
-                checkNeighbours = 0;
-                updateAndCheckNeighbours();
-            }
+//            if (checkNeighbours++ == CHECK_NEIGHBOURS_RATE) {
+//                checkNeighbours = 0;
+//                updateAndCheckNeighbours();
+//            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
@@ -115,6 +117,8 @@ class Exp {
     pointType getPointType(direction dir = front);
 
     void handleWallFollowing(bool collision);
+
+    void goToPathFinding(int x, int y);
 
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {

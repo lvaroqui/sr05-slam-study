@@ -55,6 +55,11 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         if (msg.getValue("inAction") == "0") {
             popActionsQueue();
         }
+        static bool init = false;
+        if(!init && id_ == "1") {
+            init = true;
+            goToPathFinding(9,9);
+        }
     }
 }
 
@@ -113,9 +118,7 @@ void Exp::updateAndCheckNeighbours() {
             // Note: we artificially reset its TTL in order to keep it in the list
 //            bestNeighbour.ttl = TTL_MAX;
             status_ = joiningNeighboor;
-            clearActionsQueue();
-            actionsQueue.push("join:" + std::to_string(bestNeighbour.x * 50) + "," +
-                              std::to_string(bestNeighbour.y * 50));
+            goToPathFinding(bestNeighbour.x, bestNeighbour.y);
         }
 
         // Finally, if some neighbours have disappeared, we clean them
@@ -182,7 +185,6 @@ void Exp::reportPosToMap() {
     mapMessage.add("obs", "");
     netMailBox_->push(mapMessage);
 }
-
 
 void Exp::reportPoint(int x, int y, pointType type) {
     AirplugMessage mapMessage("ROB", "MAP", AirplugMessage::air);
@@ -273,5 +275,15 @@ void Exp::handleWallFollowing(bool collision) {
                 actionsQueue.push("move:50");
             }
         }
+    }
+}
+
+void Exp::goToPathFinding(int x, int y) {
+    clearActionsQueue();
+    Pathfinder pathfinder;
+    pathfinder.mapToNodeMap(map_);
+    auto path = pathfinder.findPath(std::make_pair(x_, y_), std::make_pair(x, y));
+    for (auto point : path) {
+        actionsQueue.push("join:" + std::to_string(point.first*50) + "," + std::to_string(point.second*50));
     }
 }

@@ -30,7 +30,7 @@ using std::string;
 
 class Rob : public Supervisor {
     // Robot node (useful to get information as supervisor)
-    Node *self_;
+    webots::Node *self_;
 
     //MailBox
     MailBox *netMailBox_;

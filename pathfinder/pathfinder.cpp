@@ -5,6 +5,8 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <cfloat>
+#include <climits>
 
 Pathfinder::Pathfinder()
 {
@@ -121,7 +123,7 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
     std::set<std::pair<int,int>> openSet, closedSet;
 //  std::map<std::pair<int,int>,std::pair<int,int>> cameFrom;
     openSet.insert(pos);
-    _nodeMap.insert(std::pair<std::pair<int, int>, Node>(pos, Node(pos.first,pos.second,0,heuristic(pos, dest))));
+    _nodeMap[pos] = Node(pos.first,pos.second,0,heuristic(pos, dest));
 
 //    for(auto point = _nodeMap.begin(); point != _nodeMap.end(); ++point) {
 // //        std::cout << "x : " << point->first.first << "y : " << point->first.second <<std::endl;
@@ -130,23 +132,23 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
     while(!openSet.empty()) {
         auto shortest = smallestFInOpenSet(openSet);
         auto current = _nodeMap.find(shortest);
-        std::cout << "Instigated point " << current->first.first << " " << current->first.second << std::endl;
+//        std::cout << "Instigated point " << current->first.first << " " << current->first.second << std::endl;
         if(current->first == dest) {
-            printf("I found a way :");
+//            printf("I found a way :");
             std::list<std::pair<int,int>> daWae;
             //auto currentPoint = std::pair<int,int>(0,0);
             auto currentNode = _nodeMap.find(current->first);
             while(currentNode->first != std::pair<int,int>(currentNode->second.parentX,currentNode->second.parentY)){
                 daWae.insert(daWae.begin(),currentNode->first);
                 currentNode = _nodeMap.find(std::pair<int,int>(currentNode->second.parentX,currentNode->second.parentY));
-                std::cout << "Going back on " << currentNode->first.first << ":" << currentNode->first.second << std::endl;
+//                std::cout << "Going back on " << currentNode->first.first << ":" << currentNode->first.second << std::endl;
             }
             daWae.insert(daWae.begin(),currentNode->first);
-            std::cout << "Da Wae : ";
+//            std::cout << "Da Wae : ";
             for(auto point = daWae.begin(); point != daWae.end(); ++point) {
-                std::cout << ":" << point->first << "," << point->second << ":" /*<< std::endl*/;
+//                std::cout << ":" << point->first << "," << point->second << ":" /*<< std::endl*/;
             }
-            std::cout << std::endl;
+//            std::cout << std::endl;
             return daWae;
         }
         openSet.erase(shortest);

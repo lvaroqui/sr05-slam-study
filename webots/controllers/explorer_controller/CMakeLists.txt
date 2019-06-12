@@ -7,6 +7,7 @@ find_package(Boost 1.70.0 COMPONENTS system)
 # Defining header and source files
 set(HEADERS
         ../../../monitor/utils.h
+        ../../../pathfinder/pathfinder.h
         )
 
 set(SRCS
@@ -21,6 +22,7 @@ set(SRCS
         src/com/RobAck.cpp
         src/com/MailBox.cpp
         ../../../monitor/utils.cpp
+        ../../../pathfinder/pathfinder.cpp
         )
 
 # Including WeBots

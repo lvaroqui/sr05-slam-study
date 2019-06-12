@@ -18,6 +18,7 @@ private :
     float gWeight = 1;
     float hWeight = 1;
 public :
+    Node() = default;
     Node(int parentXX, int parentYY, float ggCost, float hhCost) : parentX(parentXX), parentY(parentYY), gCost(ggCost), hCost(hhCost) {}
     int parentX;
     int parentY;
@@ -43,7 +44,7 @@ private:
 public:
     Pathfinder();
     void resetMap();
-    void mapToNodeMap(const std::map<std::pair<int,int>, pointType> &map);
+    void mapToNodeMap(const Map &map);
     std::list<std::pair<int, int>> findPath(const std::pair<int, int> &pos, const std::pair<int, int> &dest, bool onlyUsed = false);
     std::list<std::pair<int, int> > goHome(const std::pair<int, int> &pos, bool onlyUsed = false);
 };
