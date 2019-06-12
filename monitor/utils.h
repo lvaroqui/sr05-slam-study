@@ -9,7 +9,8 @@
 enum pointType {
     wall,
     explored,
-    unexplored
+    unexplored,
+    frontier
 };
 
 typedef std::map<std::pair<int, int>, pointType > Map;
@@ -27,7 +28,8 @@ Map fromStringToMap(std::string const& str);
 
 int floorNeg(int num);
 
-
 int coordToMap (int coord);
+
+void findFrontiers(Map &map);
 
 #endif // UTILS_H
