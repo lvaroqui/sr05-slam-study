@@ -128,3 +128,18 @@ void findFrontiers(Map &map) {
         }
     }
 }
+
+std::pair<int, int> findClosestFrontier(const Map& map, const std::pair<int, int>& position) {
+    std::pair<int, int> bestFrontier;
+    double minDist = std::numeric_limits<double>::max();
+    for(auto point : map) {
+        if(point.second == frontier) {
+            double dist = std::sqrt(std::pow(point.first.first-position.first, 2) + std::pow(point.first.second-position.second, 2));
+            if(dist < minDist) {
+                minDist = dist;
+                bestFrontier = point.first;
+            }
+        }
+    }
+    return bestFrontier;
+}
