@@ -56,7 +56,7 @@ class Exp {
     std::pair<string, float> closestNeighbour();
 	std::map<std::string, int> clock_;
 
-    void goTowardsNeighbour(const string &name);
+    void goTowardsNeighbour(std::pair<string, float> neighbour);
 
     void run() {
         int checkNeighbours = 0;
