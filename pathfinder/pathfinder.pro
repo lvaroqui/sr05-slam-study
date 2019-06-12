@@ -8,4 +8,5 @@ SOURCES += \
     pathfinder.cpp
 
 HEADERS += \
-    pathfinder.h
+    pathfinder.h \
+    ../Monitor/utils.h
