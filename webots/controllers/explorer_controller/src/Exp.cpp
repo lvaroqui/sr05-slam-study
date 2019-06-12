@@ -21,9 +21,8 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         bool collision = !msg.getValue("robcol").empty();
 
         // If a collision is detected
-         if (collision) {
-		    clock_[id_]++;
-       
+        if (collision) {
+
             std::vector<std::pair<int, int>> points;
 
             // Wall
@@ -34,14 +33,15 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 
             // Sending observations to monitoring APP and other robots
             reportPoint(wall.first, wall.second, pointType::wall);
-        }
-        else {
+        } else {
             reportPosToMap();
         }
         handleWallFollowing(collision);
+        if (status_ == joiningNeighboor) {
+            status_ = standBy;
+        }
 
-    }
-    else if (ra.getType() == RobAck::curr) {
+    } else if (ra.getType() == RobAck::curr) {
         x_ = coordToMap(ra.getCommand()[0]);
         y_ = coordToMap(ra.getCommand()[1]);
         heading_ = coordToMap(ra.getCommand()[2]);
@@ -59,31 +59,16 @@ void Exp::handleRobMessage(AirplugMessage msg) {
 }
 
 void Exp::handleExpMessage(AirplugMessage msg) {
-    
-
-	//Update your clocks according to the received clock
-	std::map<std::string, int> receivedClock = fromStringToMapClock(msg.getValue("clk"));
-	for (auto clk : receivedClock) {
-		if (clock_.find(clk.first) != clock_.end() && clock_[clk.first] < clk.second){
-			clock_[clk.first] = clk.second;
-		}
-		else if(clock_.find(clk.first) == clock_.end()){
-			clock_[clk.first] = clk.second;
-		}
-	}	
     if (msg.getValue("typemsg") == "infos") {
-		//Increment your clock
-		clock_[id_]++;
         Map receivedMap = fromStringToMap(msg.getValue("obs"));
         map_.insert(receivedMap.begin(), receivedMap.end());
-    } else if(msg.getValue("typemsg") == "helloNeighbour") {
+    } else if (msg.getValue("typemsg") == "helloNeighbour") {
         // Update from a neighbour, sending us his position
         string sender = msg.getValue("sender");
         int x = std::stoi(msg.getValue("xpos"));
         int y = std::stoi(msg.getValue("ypos"));
-        std::pair<int, int> pos(x, y);
-        std::pair<int, std::pair<int, int>> neighbour(TTL_MAX, pos);
-        neighbours_[sender] = neighbour;
+        Neighbour nr(TTL_MAX, x, y);
+        neighbours_[sender] = nr;
     }
 }
 
@@ -107,39 +92,36 @@ void Exp::updateAndCheckNeighbours() {
     msg.add("typemsg", "helloNeighbour");
     msg.add("xpos", std::to_string(x_));
     msg.add("ypos", std::to_string(y_));
-    msg.add("clk", fromMapToStringClock(clock_));
 
     netMailBox_->push(msg);
 
     // The remaining operations are only done if we have at least 1 neighbour registered
-    if(neighbours_.size() > 0) {
+    if (!neighbours_.empty()) {
         // For each neigbour we have, we update their TTL
         int disappearedNeighbours = 0;
-        for(auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-            int ttlValue = --it->second.first;
-            if(ttlValue == 0)
+        for (auto &neighbour : neighbours_) {
+            int ttlValue = --neighbour.second.ttl;
+            if (ttlValue == 0)
                 disappearedNeighbours++;
         }
 
         // We check if we are still OK or too far away from other robots
-        auto bestNeighbour = closestNeighbour();
-        if(disappearedNeighbours == neighbours_.size()) {
+        Neighbour& bestNeighbour = closestNeighbour();
+
+        if (disappearedNeighbours == neighbours_.size()) {
             // We don't have any neighbour anymore : we must come back to the closest one
             // Note: we artificially reset its TTL in order to keep it in the list
-            neighbours_[bestNeighbour.first].second.first = TTL_MAX;
-            goTowardsNeighbour(bestNeighbour);
-        } else {
-            // We still have at least 1 neighbour : we check if we are not too far away from the closest one
-            if(bestNeighbour.second > WARNING_DISTANCE) {
-                // We are too far away : we have to go back towards him
-                goTowardsNeighbour(bestNeighbour);
-            }
+//            bestNeighbour.ttl = TTL_MAX;
+            status_ = joiningNeighboor;
+            clearActionsQueue();
+            actionsQueue.push("join:" + std::to_string(bestNeighbour.x * 50) + "," +
+                              std::to_string(bestNeighbour.y * 50));
         }
 
         // Finally, if some neighbours have disappeared, we clean them
-        if(disappearedNeighbours) {
-            for(auto it = neighbours_.begin(); it != neighbours_.end(); ) {
-                if(it->second.first == 0) {
+        if (disappearedNeighbours) {
+            for (auto it = neighbours_.begin(); it != neighbours_.end();) {
+                if (it->second.ttl == 0) {
                     it = neighbours_.erase(it);
                 } else {
                     ++it;
@@ -149,38 +131,17 @@ void Exp::updateAndCheckNeighbours() {
     }
 }
 
-std::pair<string, float> Exp::closestNeighbour() {
-    string closestNeighbourName = "";
+Exp::Neighbour & Exp::closestNeighbour() {
+    string closestNeighbourName;
     float shortestDistance = std::numeric_limits<float>::max();
-    for (auto it = neighbours_.begin(); it != neighbours_.end(); ++it) {
-        float distance = sqrt(pow(it->second.second.first - x_, 2) + pow(it->second.second.second - y_, 2));
+    for (auto & neighbour : neighbours_) {
+        float distance = sqrt(pow(neighbour.second.x - x_, 2) + pow(neighbour.second.y - y_, 2));
         if (distance < shortestDistance) {
-            closestNeighbourName = it->first;
+            closestNeighbourName = neighbour.first;
             shortestDistance = distance;
         }
     }
-    std::pair<string, float> closest(closestNeighbourName, shortestDistance);
-    return closest;
-}
-
-void Exp::goTowardsNeighbour(std::pair<string, float> neighbour) {
-    // We collect the neighbour's last known coordinates
-    int neighbourX = neighbours_[neighbour.first].second.first;
-    int neighbourY = neighbours_[neighbour.first].second.second;
-
-    // We compute the coordinates we want to go to (because of the safe distance to avoid collision)
-    float currentDistance = neighbour.second;
-    float ratio = SAFE_DISTANCE / currentDistance;
-    int safeXDistance = static_cast<int>(round((x_-neighbourX) * ratio));
-    int safeYDistance = static_cast<int>(round((y_-neighbourY) * ratio));
-    int safeX = neighbourX + safeXDistance;
-    int safeY = neighbourY + safeYDistance;
-
-    // We create the message then send it to ROB
-    AirplugMessage msg("EXP", "ROB", AirplugMessage::local);
-    string command = "join:" + std::to_string(safeX) + "," + std::to_string(safeY);
-    msg.add("robord", command);
-    netMailBox_->push(msg);
+    return neighbours_[closestNeighbourName];
 }
 
 std::vector<std::pair<int, int>> Exp::getPointsBetween(int x1, int y1, int x2, int y2) {
@@ -255,8 +216,7 @@ pointType Exp::getPointType(Exp::direction dir) {
     std::pair<int, int> point = getPoint(dir);
     if (map_.find(point) == map_.end()) {
         return pointType::unexplored;
-    }
-    else {
+    } else {
         return map_[point];
     }
 }
@@ -283,13 +243,12 @@ std::pair<int, int> Exp::getPoint(Exp::direction dir) {
 }
 
 void Exp::handleWallFollowing(bool collision) {
-    if (followWall_) {
+    if (status_ == followingWall) {
         // On a longé le mur "tout droit"
         if (collision && actionsQueue.empty() && getPointType(right) != wall) {
             if (getPointType(left) != unexplored) {
-                followWall_ = false;
-            }
-            else {
+                status_ = standBy;
+            } else {
                 actionsQueue.push("turn:90");
                 actionsQueue.push("move:50");
                 actionsQueue.push("turn:-90");
@@ -298,14 +257,7 @@ void Exp::handleWallFollowing(bool collision) {
         }
             // On est arrivé à un bord "sortant" du mur
         else if (actionsQueue.empty() && getPointType(right) == wall) {
-            if (getPointType(front) != unexplored) {
-                followWall_ = false;
-            }
-            else {
-                actionsQueue.push("turn:-90");
-                actionsQueue.push("move:50");
-            }
-
+            status_ = standBy;
         }
             // On est dans un coin
         else if (collision && actionsQueue.size() == 2) {
@@ -313,9 +265,8 @@ void Exp::handleWallFollowing(bool collision) {
             reportPoint(wall.first, wall.second, pointType::wall);
             clearActionsQueue();
             if (getPointType(left) != unexplored) {
-                followWall_ = false;
-            }
-            else {
+                status_ = standBy;
+            } else {
                 actionsQueue.push("turn:90");
                 actionsQueue.push("move:50");
                 actionsQueue.push("turn:-90");

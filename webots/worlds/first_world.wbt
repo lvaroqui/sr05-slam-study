@@ -2,8 +2,8 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation 0.29140397241131677 0.8862724390107539 0.36000678981490614 4.3459396926766525
-  position -4.882724081136503 5.280746419280972 -1.0411396878164059
+  orientation -0.39436762240757733 -0.7926470172750739 -0.46495686294700866 1.9890786313049829
+  position -5.420153102519453 9.730006673012605 -2.3796303192018686
 }
 TexturedBackground {
 }
@@ -14,18 +14,36 @@ Pioneer2 {
   controllerArgs "2"
   color 0.45098039215686275 0.8235294117647058 0.08627450980392157
 }
-Wall {
-  translation 0 0 1
-  size 0.5 0.5 0.5
+Pioneer2 {
+  translation 3 0 -2.5
+  name "1"
+  controllerArgs "1"
 }
 Wall {
-  translation 1.5 0 1
+  translation -0.5 0 1
   name "wall(5)"
-  size 0.5 0.5 0.5
+  size 2.5 0.5 0.5
+}
+Wall {
+  translation -1.5 0 -1.5
+  rotation 0 1 0 1.5707963220000003
+  name "wall(6)"
+  size 2.5 0.5 0.5
+}
+Wall {
+  translation -3.499999999999993 0 -1.5000000095897956
+  rotation 0 1 0 1.5707963220000003
+  name "wall(11)"
+  size 5.5 0.5 0.5
 }
 Wall {
   translation 2 0 -0.25
   name "wall(8)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation 2 0 -3.25
+  name "wall(10)"
   size 0.5 0.5 3
 }
 Wall {
@@ -35,14 +53,22 @@ Wall {
   size 0.5 0.5 3
 }
 Wall {
-  translation 0.5 0 1
-  name "wall(6)"
-  size 0.5 0.5 0.5
+  translation 0.2500000359617257 0 -4.000000000000004
+  rotation 0 0.9999999999999999 0 4.712388966
+  name "wall(7)"
+  size 0.5 0.5 3
 }
 Wall {
-  translation 1 0 1
-  name "wall(7)"
-  size 0.5 0.5 0.5
+  translation 0 0 -5.75
+  rotation 0 -1 0 3.1415926823591733
+  name "wall(12)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation 0 0 -9.25
+  rotation 0 -1 0 3.1415926823591733
+  name "wall(13)"
+  size 0.5 0.5 1
 }
 Wall {
   translation 0.25 0 10.5
@@ -70,9 +96,4 @@ Floor {
   translation 0.25 0 0.25
   size 20 20
   tileSize 1 1
-}
-Pioneer2 {
-  translation 1 0 0
-  name "1"
-  controllerArgs "1"
 }

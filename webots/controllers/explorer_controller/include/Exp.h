@@ -22,7 +22,7 @@
 #include <limits>
 #include <com/RobOrd.h>
 
-#define TTL_MAX 5
+#define TTL_MAX 3
 #define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
 #define WARNING_DISTANCE 24 // 24*50 = 1200cm = 12m
 #define SAFE_DISTANCE 4 // 4*50 = 200cm = 2m
@@ -38,13 +38,28 @@ class Exp {
 
     std::queue<string> actionsQueue;
 
-    bool followWall_ = true;
+    enum status {
+        standBy,
+        followingWall,
+        joiningNeighboor,
+    };
+
+    status status_ = standBy;
 
     int x_ = 0;
     int y_ = 0;
     int heading_ = 0;
 
-    std::map<string, std::pair<int, std::pair<int, int>>> neighbours_;
+    class Neighbour {
+    public:
+        Neighbour() = default;
+        Neighbour(int TTL, int X, int Y): ttl(TTL), x(X), y(Y) {}
+        int ttl;
+        int x;
+        int y;
+    };
+
+    std::map<string, Neighbour> neighbours_;
 
     void handleRobMessage(AirplugMessage msg);
 
@@ -54,10 +69,7 @@ class Exp {
 
     void updateAndCheckNeighbours();
 
-    std::pair<string, float> closestNeighbour();
-	std::map<std::string, int> clock_;
-
-    void goTowardsNeighbour(std::pair<string, float> neighbour);
+    Neighbour & closestNeighbour();
 
     void reportPoint(int x, int y, pointType type);
 
@@ -106,7 +118,7 @@ class Exp {
 
 public:
     Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
-		clock_[id_] = 0;
+
     }
 
     ~Exp() {

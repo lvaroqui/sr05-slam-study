@@ -5,12 +5,16 @@
 #include <com/RobAck.h>
 #include "Net.h"
 
+#define LOG_MESSAGES 0
+
 void Net::run() {
     while (run_) {
         // Handling incoming messages from monitoring app
         if (udpServer_.getNumberOfMessages() > 0) {
             AirplugMessage msg(udpServer_.popMessage());
-            std::cout << "NET " << id_ << ": Received this message from UDP: " << msg.serialize() << std::endl;
+            if (LOG_MESSAGES) {
+                std::cout << "NET " << id_ << ": Received this message from UDP: " << msg.serialize() << std::endl;
+            }
 
             // Handling connection
             if (msg.getValue("typemsg") == "MAPCO") {
@@ -28,7 +32,6 @@ void Net::run() {
                 // Handling robot order
             else if (msg.getValue("typemsg") == "ROBMSG") {
                 msg.remove("typemsg");
-                std::cout << id_ << " Passing to subscriber " << msg.serialize() << std::endl;
                 subscribers[msg.getDestinationApp()]->push(msg);
             }
         }
@@ -37,7 +40,7 @@ void Net::run() {
         while (lchMailBox_.size() > 0) {
             AirplugMessage msg = lchMailBox_.pop();
             // Logging
-            if ((msg.getEmissionApp() != "ROB" || msg.getDestinationApp() != "EXP" || RobAck(msg.getValue("roback")).getType() != RobAck::curr) &&
+            if (LOG_MESSAGES && (msg.getEmissionApp() != "ROB" || msg.getDestinationApp() != "EXP" || RobAck(msg.getValue("roback")).getType() != RobAck::curr) &&
                     (msg.getValue("typemsg") != "helloNeighbour"))
                 std::cout << id_ << ": Received this message from LCH: " << msg.serialize() << std::endl;
 
@@ -75,7 +78,7 @@ void Net::run() {
                 lastMessagesReceived_[sender] = messageNumber;
 
                 // Logging
-                if (msg.getValue("typemsg") != "helloNeighbour")
+                if (LOG_MESSAGES && msg.getValue("typemsg") != "helloNeighbour")
                     std::cout << id_ << ": Received this message from AIR: " << msg.serialize() << std::endl;
 
                 if (destination == BROADCAST) {
