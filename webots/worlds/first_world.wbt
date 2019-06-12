@@ -9,16 +9,6 @@ TexturedBackground {
 }
 TexturedBackgroundLight {
 }
-Pioneer2 {
-  name "2"
-  controllerArgs "2"
-  color 0.45098039215686275 0.8235294117647058 0.08627450980392157
-}
-Pioneer2 {
-  translation 3 0 -2.5
-  name "1"
-  controllerArgs "1"
-}
 Wall {
   translation -0.5 0 1
   name "wall(5)"
@@ -96,4 +86,8 @@ Floor {
   translation 0.25 0 0.25
   size 20 20
   tileSize 1 1
+}
+Pioneer2 {
+  name "1"
+  controllerArgs "1"
 }

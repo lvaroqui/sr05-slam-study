@@ -215,21 +215,24 @@ public:
         double speedLeft = currentLeftRotation_ - previousLeftRotation_;
         double speedRight = currentRightRotation_ - previousRightRotation_;
 
-        // Translating
-        if (speedLeft * speedRight >= 0) {
-            double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
-            x_ += cos(heading_) * distance;
-            y_ += sin(heading_) * distance;
-        } else { // Rotating
-            heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
-            heading_ = modAngle(heading_);
-        }
-
+//         Translating
+//        if (speedLeft * speedRight >= 0) {
+//            double distance = (currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_;
+//            x_ += cos(heading_) * distance;
+//            y_ += sin(heading_) * distance;
+//        } else { // Rotating
+//            heading_ += atan2((currentLeftRotation_ - previousLeftRotation_) * wheelDiameter_, wheelEccentricity_);
+//            heading_ = modAngle(heading_);
+//        }
+        auto position = self_->getPosition();
+        x_ = -position[2];
+        y_ = position[0];
+        heading_ = modAngle(-self_->getField("rotation")->getSFRotation()[3]);
 
         //  If robot is executing a rotating order
         if (rotating_) {
             // Checking if we reached the desired heading_
-            if (abs(targetHeading_ - heading_) < 0.001) {
+            if (abs(speedLeft) < 0.001 && abs(modAngle(targetHeading_ - heading_)) < 0.01) {
                 // If we are in a joining operation we then go to the translating part
                 if (joining_) {
                     translating_ = true;
@@ -248,7 +251,7 @@ public:
                 controlRotation();
             }
         }
-            // If robot is executing a translating order
+        // If robot is executing a translating order
         else if (translating_) {
             // Finding minimum distance from obstacles
             double minDistance = 0.0;
@@ -271,7 +274,7 @@ public:
             }
 
             // Checking if we reached the desired position
-            if (speedLeft < 0.001 && (abs(currentTranslation_ - targetTranslation_) < 0.001 || collision_)) {
+            if (speedLeft < 0.001 && (abs(currentTranslation_ - targetTranslation_) < 0.1 || collision_)) {
                 AirplugMessage msg;
 
                 // If we were joining, acknowledging with joined

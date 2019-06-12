@@ -26,7 +26,7 @@
 
 #include <utils.h>
 
-#define GRID_STEP 50
+#define GRID_STEP 10
 
 
 using namespace std;

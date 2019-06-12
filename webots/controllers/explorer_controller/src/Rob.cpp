@@ -23,11 +23,12 @@ void Rob::controlTranslation() {
 
 void Rob::controlRotation() {
     double error = targetHeading_ - heading_;
-    error = modAngle(error);;
+    error = modAngle(error);
 
-    double command = 15 * error;
+    double command = 12 * error;
 
     command = saturate(command, 2);
+
 
     rightWheelMotor_->setVelocity(-command);
     leftWheelMotor_->setVelocity(command);

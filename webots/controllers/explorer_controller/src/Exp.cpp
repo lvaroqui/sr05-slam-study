@@ -39,6 +39,7 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         handleWallFollowing(collision);
         if (status_ == exploring && actionsQueue.empty()) {
             std::cout << "Back to stand by" << std::endl;
+            std::cout << "Position is: " << x_ << " " << y_ << std::endl;
             status_ = standBy;
         }
 
@@ -280,6 +281,8 @@ void Exp::goToPathFinding(int x, int y) {
     pathfinder.mapToNodeMap(map_);
     auto path = pathfinder.findPath(std::make_pair(x_, y_), std::make_pair(x, y));
     for (auto point : path) {
-        actionsQueue.push("join:" + std::to_string(point.first*50) + "," + std::to_string(point.second*50));
+        if (x_ != point.first || y_ != point.second) {
+            actionsQueue.push("join:" + std::to_string(point.first * 50) + "," + std::to_string(point.second * 50));
+        }
     }
 }

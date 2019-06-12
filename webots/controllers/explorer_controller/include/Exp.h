@@ -24,7 +24,7 @@
 #include <com/RobOrd.h>
 
 #define TTL_MAX 3
-#define CHECK_NEIGHBOURS_RATE 50 // 10ms per unit
+#define CHECK_NEIGHBOURS_RATE 100 // 10ms per unit
 
 class Exp {
     bool run_ = true;
@@ -41,8 +41,7 @@ class Exp {
         standBy,
         followingWall,
         joiningNeighboor,
-        exploring,
-        pathFindingNavigation
+        exploring
     };
 
     status status_ = standBy;
@@ -97,22 +96,21 @@ class Exp {
                 }
             }
             if (status_ == standBy) {
-                status_ = exploring;
                 findFrontiers(map_);
-                std::cout << fromMapToString(map_) << std::endl;
                 auto point = findClosestFrontier(map_, std::make_pair(x_, y_));
-                std::cout << "Next point to explore :" << point.first << " " << point.second << std::endl;
-                goToPathFinding(point.first, point.second);
+                if (x_ != point.first || y_ != point.second) {
+                    status_ = exploring;
+                    std::cout << "Next point to explore :" << point.first << " " << point.second << std::endl;
+                    goToPathFinding(point.first, point.second);
+                }
             }
-//            if (checkNeighbours++ == CHECK_NEIGHBOURS_RATE) {
-//                checkNeighbours = 0;
-//                updateAndCheckNeighbours();
-//            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
-    std::vector<std::pair<int, int>> getPointsBetween(int x1, int y1, int x2, int y2);
+    std::vector<std::pair<int, int>>
+
+    getPointsBetween(int x1, int y1, int x2, int y2);
 
     enum direction {
         front,
@@ -130,11 +128,18 @@ class Exp {
     void goToPathFinding(int x, int y);
 
 public:
-    Exp(string id, MailBox *netMailBox) : id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
+    Exp(string
+        id,
+        MailBox *netMailBox
+    ) :
+
+            id_(id), netMailBox_(netMailBox), runner_(&Exp::run, this) {
 
     }
 
-    ~Exp() {
+    ~
+
+    Exp() {
         run_ = false;
         runner_.join();
         std::cout << "Exp shutdown";
