@@ -14,10 +14,10 @@ Pathfinder::Pathfinder()
 float Pathfinder::calculateHeuristic(const std::pair<int, int> &pos, const std::pair<int, int> &end) {
     int newx = std::abs(pos.first-end.first);
     int newy = std::abs(pos.second-end.second);
-    float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
-    float t2 = std::abs(newx-newy);
+    //float t = (std::max(newx,newy)-std::abs(newx-newy))*1.4;
+    //float t2 = std::abs(newx-newy);
     //std::cout << "for point " << x << " "  << y << " : diagonale " << t << " lignedroite " << t2 << " total : " << t+t2 << std::endl;
-    return (std::max(newx,newy)-std::abs(newx-newy))*1.4+std::abs(newx-newy);
+    return (std::max(newx,newy)-std::abs(newx-newy))*1.4f+std::abs(newx-newy);
 }
 
 float Pathfinder::heavyHeuristic(const std::pair<int,int> &pos, const std::pair<int,int> &end) {
@@ -121,8 +121,12 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
     std::set<std::pair<int,int>> openSet, closedSet;
 //  std::map<std::pair<int,int>,std::pair<int,int>> cameFrom;
     openSet.insert(pos);
-    _nodeMap.insert(std::pair<std::pair<int, int>, Node>(pos, Node(pos.first,pos.second,0,heuristic(pos, dest))));
-
+    auto dep = _nodeMap.find(pos);
+    if(dep == _nodeMap.end()) {
+        _nodeMap.insert(std::pair<std::pair<int, int>, Node>(pos, Node(pos.first,pos.second,0,heuristic(pos, dest))));
+    } else {
+        dep->second = Node(pos.first,pos.second,0,heuristic(pos, dest));
+    }
 //    for(auto point = _nodeMap.begin(); point != _nodeMap.end(); ++point) {
 // //        std::cout << "x : " << point->first.first << "y : " << point->first.second <<std::endl;
 // //        std::cout << "Heuristique : " << point->second.fCost() <<std::endl;
@@ -153,7 +157,7 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
         closedSet.insert(shortest);
         for(int i = -1; i<=1;i++) {
             for(int j = -1; j <= 1; j++) {
-                if(i==0 && j==0) {
+                if(std::abs(i) == std::abs(j)) {
                     continue;
                 }
                 auto newCoord = std::pair<int,int>(shortest.first+i,shortest.second+j);
@@ -162,7 +166,7 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
                     continue;
                 }
                 auto it = _nodeMap.find(newCoord);
-                float newGCost = current->second.gCost + (i==0 || j ==0 ? 1.0 : 1.4);
+                float newGCost = current->second.gCost + (i==0 || j ==0 ? 1.0f : 1.4f);
                 if(it != _nodeMap.end()) {
                     if(it->second.gCost <= newGCost && it->second.hCost != -FLT_MAX) {
                         continue;
@@ -194,4 +198,19 @@ std::list<std::pair<int, int> > Pathfinder::findPath(const std::pair<int, int> &
 
 void Pathfinder::resetMap() {
     _nodeMap.clear();
+}
+
+std::list<std::pair<int, int>> smoothPath(const std::list<std::pair<int, int>>& path) {
+    std::list<std::pair<int, int>> smoothed;
+    if(path.empty()) {
+        return smoothed;
+    }
+    std::pair<int,int> anchor;
+    std::pair<int,int> endAnchor;
+    anchor = path.front();
+    smoothed.insert(smoothed.begin(), anchor);
+    if(path.size() == 1) {
+        return smoothed;
+    }
+    return smoothed;
 }

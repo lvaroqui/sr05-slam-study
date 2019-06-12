@@ -14,6 +14,9 @@ int main()
 
 //    return 0;
     std::map<std::pair<int,int>, pointType> map;
+    std::map<std::pair<int,int>, pointType> emptymap;
+    emptymap.insert(std::pair<std::pair<int,int>, pointType>(std::pair<int,int>(5,6), explored));
+
     //map.insert(map.begin(), std::pair<int,int>(1,1));
 //    map.insert(map.begin(), std::pair<int,int>(4,1));
 //    map.insert(map.begin(), std::pair<int,int>(4,-1));
@@ -57,7 +60,7 @@ int main()
     cout << "Hello World!" << endl;
     std::set<std::pair<int,int>> opset;
 
-    path.mapToNodeMap(map);
+    path.mapToNodeMap(emptymap);
 
     //    path.goHome(std::pair<int,int>(3,4));
 //    path.goHome(std::pair<int,int>(4,4));
@@ -69,15 +72,21 @@ int main()
 //    path.goHome(std::pair<int,int>(4,1));
 //    path.goHome(std::pair<int,int>(-4,-1));
 //    path.goHome(std::pair<int,int>(4,-1));
-    path.goHome(std::pair<int,int>(6,0));
-//    for(auto i = path._nodeMap.begin(); i!= path._nodeMap.end(); i++) {
+    //path.goHome(std::pair<int,int>(6,0));
+    auto list = path.findPath(std::make_pair(3,3), std::make_pair(9,9));
+    for (auto& a : list) {
+        std::cout << a.first << a.second << "-";
+    }
+    //path.findPath(std::pair<int,int>(3,3), std::pair<int,int>(9,9));
+
+    //    for(auto i = path._nodeMap.begin(); i!= path._nodeMap.end(); i++) {
 //        std::cout << "point " << i->first.first << "," << i->first.second << ":" << i->second.hCost << std::endl;
 //        if(i->second.hCost == -FLT_MAX) {
 //            std::cout << "found it" << std::endl;
 //        }
 //    }
     Pathfinder path2;
-    path2.mapToNodeMap(map);
+    path2.mapToNodeMap(emptymap);
     path2.goHome(std::pair<int,int>(6,0), true);
     //path2.findPath(std::pair<int,int>(6,0), std::pair<int,int>(8,0));
    // path.goHome(std::pair<int,int>(1,0));
@@ -90,5 +99,11 @@ int main()
 //    for(auto i = path._cacheHeuristic.begin(); i!= path._cacheHeuristic.end(); i++) {
 //        std::cout << "point " << i->first.first << "," << i->first.second << ":" << i->second << std::endl;
 //    }
+    Pathfinder pathfinder;
+    pathfinder.mapToNodeMap(emptymap);
+    auto paths = pathfinder.findPath(std::make_pair(5,6), std::make_pair(9,9));
+    for (auto point : paths) {
+        std::cout << point.first << point.second << "-";
+    }
     return 0;
 }

@@ -41,6 +41,7 @@ private:
     float heuristic(const std::pair<int,int> &pos, const std::pair<int,int> &end);
     std::pair<int,int> smallestFInOpenSet(const std::set<std::pair<int, int> > &openSet) const;
 public:
+    std::list<std::pair<int, int>> smoothPath(const std::list<std::pair<int, int>>& path);
     Pathfinder();
     void resetMap();
     void mapToNodeMap(const std::map<std::pair<int,int>, pointType> &map);
