@@ -23,7 +23,9 @@ int main()
 //    map.insert(map.begin(), std::pair<float,float>(3,1));
 //    map.insert(map.begin(), std::pair<float,float>(3,0));
 //    map.insert(map.begin(), std::pair<float,float>(3,-1));
-    //map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(3,0), wall));
+    map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(3,0), wall));
+    map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(3,-1), wall));
+    map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(3,1), wall));
     map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(0,0), explored));
     map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(1,-1), explored));
     map.insert(std::pair<std::pair<float,float>, pointType>(std::pair<float,float>(1,-2), explored));

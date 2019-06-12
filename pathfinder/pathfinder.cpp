@@ -157,6 +157,10 @@ std::list<std::pair<float, float>> Pathfinder::findPath(const std::pair<float, f
                     continue;
                 }
                 auto newCoord = std::pair<float,float>(shortest.first+i,shortest.second+j);
+                auto isClosedIterator = closedSet.find(newCoord);
+                if(isClosedIterator != closedSet.end()) {
+                    continue;
+                }
                 auto it = _nodeMap.find(newCoord);
                 float newGCost = current->second.gCost + (i==0 || j ==0 ? 1.0 : 1.4);
                 if(it != _nodeMap.end()) {
