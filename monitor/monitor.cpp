@@ -287,9 +287,11 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
            string type = APG_msg_splitstr(msg,MAP_mnemotype);
            if(type == ROB_connect)
            {
+               if(_robot != nullptr)
+                    _map->removeItem(_robot);
                 _map->clear();
                 _obstacles.clear();
-                _robot =nullptr;
+                //_robot =nullptr;
                 cout << "CONNEXION EN COURS" << endl;
                 string xString = APG_msg_splitstr(msg,xpos);
                 string yString = APG_msg_splitstr(msg,ypos);
@@ -305,13 +307,14 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                     _robot = _map->addRect(QRect(0.1*GRID_STEP,0.1*GRID_STEP,GRID_STEP*0.8,GRID_STEP*0.8),QPen(QColor(255,0,0)),QBrush(QColor(255,0,0)));
                     _robot->setTransformOriginPoint(GRID_STEP*0.9/2, GRID_STEP*0.9/2);
                     //_robot->setOpacity(0.8);
+
                     _robot->setRotation(_robotAngle);
                    _robot->setX(_XconnectedRobot*GRID_STEP);
                    _robot->setY(_YconnectedRobot*GRID_STEP);
                 }
                 else
                 {
-                    _map->removeItem(_robot);
+
                     cout << "modify robot" <<endl;
                     _robot->setRotation(_robotAngle);
                    _robot->setX(_XconnectedRobot*GRID_STEP);
@@ -345,6 +348,7 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
 
     }
+    _mapView->repaint();
 }
 
 void Monitor::tryToConnect()
