@@ -236,6 +236,9 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                {
                    cout << "MODIF POS ROBOT" << endl;
                    cout << "ackVal.getCommand().size =" << ackVal.getCommand().size() << endl;
+
+                   _map->removeItem(_robot);
+
                    _XconnectedRobot = ackVal.getCommand()[0];
                    _YconnectedRobot = ackVal.getCommand()[1];
                    _robotAngle = ackVal.getCommand()[2];
@@ -264,6 +267,8 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
 
                   _robot->setX(_XconnectedRobot*GRID_STEP);
                   _robot->setY(_YconnectedRobot*GRID_STEP);
+
+                  _map->addItem(_robot);
                }
            }
     }
@@ -306,10 +311,13 @@ void Monitor::receive(std::string const& msg, std::string  const& who)
                 }
                 else
                 {
+                    _map->removeItem(_robot);
                     cout << "modify robot" <<endl;
                     _robot->setRotation(_robotAngle);
                    _robot->setX(_XconnectedRobot*GRID_STEP);
                    _robot->setY(_YconnectedRobot*GRID_STEP);
+
+                   _map->addItem(_robot);
                 }
 
 
