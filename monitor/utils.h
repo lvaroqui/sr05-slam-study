@@ -4,12 +4,15 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <limits>
+#include <cmath>
 
 #define ROB_SIZE 50
 enum pointType {
     wall,
     explored,
-    unexplored
+    unexplored,
+    frontier
 };
 
 typedef std::map<std::pair<int, int>, pointType > Map;
@@ -27,7 +30,9 @@ Map fromStringToMap(std::string const& str);
 
 int floorNeg(int num);
 
-
 int coordToMap (int coord);
+
+void findFrontiers(Map &map);
+std::pair<int, int> findClosestFrontier(const Map& map, const std::pair<int, int>& position);
 
 #endif // UTILS_H
