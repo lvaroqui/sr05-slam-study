@@ -2,8 +2,8 @@
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.39436762240757733 -0.7926470172750739 -0.46495686294700866 1.9890786313049829
-  position -5.420153102519453 9.730006673012605 -2.3796303192018686
+  orientation -0.8923027203084428 0.3765781000602394 0.24896744744077098 1.2137111184200515
+  position 7.391999075150235 26.126866666498167 6.3538433306036515
 }
 TexturedBackground {
 }
@@ -21,9 +21,39 @@ Wall {
   size 2.5 0.5 0.5
 }
 Wall {
-  translation -3.499999999999993 0 -1.5000000095897956
+  translation -3.5099999874853265 0 -4.110000009637731
+  rotation 0 1 0 1.5707963220000003
+  name "wall(16)"
+  size 2.5 0.5 0.5
+}
+Wall {
+  translation -3.4999999975066536 0 -2.0200000095897956
   rotation 0 1 0 1.5707963220000003
   name "wall(11)"
+  size 5.5 0.5 0.5
+}
+Wall {
+  translation -4.5 0 -5.5
+  rotation 0 1 0 6.283185307179586
+  name "wall(14)"
+  size 5.5 0.5 0.5
+}
+Wall {
+  translation -0.5 0 2.4999999904101915
+  rotation 0 1 0 6.283185307179586
+  name "wall(15)"
+  size 5.5 0.5 0.5
+}
+Wall {
+  translation -5.830000000000009 0 2.4999999904101915
+  rotation 0 1 0 6.283185307179586
+  name "wall(23)"
+  size 5.5 0.5 0.5
+}
+Wall {
+  translation -7.239999999999988 0 2.4999999904101915
+  rotation 0 1 0 6.283185307179586
+  name "wall(24)"
   size 5.5 0.5 0.5
 }
 Wall {
@@ -49,9 +79,51 @@ Wall {
   size 0.5 0.5 3
 }
 Wall {
-  translation 0 0 -5.75
+  translation -0.5100000000000002 0 -5.75000001467237
   rotation 0 -1 0 3.1415926823591733
   name "wall(12)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation 1.25 0 -6.5
+  rotation 0 1 0 1.5707962836408262
+  name "wall(25)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation -3.4999999136918527 0 -8.750000100692814
+  rotation 0 -1 0 3.1415926823591733
+  name "wall(17)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation -5.999999913691838 0 -8.750000172616245
+  rotation 0 -1 0 3.1415926823591733
+  name "wall(18)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation -8.5 0 -3.25
+  rotation 0 -1 0 3.1415926823591733
+  name "wall(20)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation -6.74999995564715 0 -7.500000197789466
+  rotation 0 -1 0 1.570796360359173
+  name "wall(19)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation -6.750000140250645 0 -2.000000197789496
+  rotation 0 -1 0 1.570796360359173
+  name "wall(21)"
+  size 0.5 0.5 3
+}
+Wall {
+  translation -4.89000014025065 0 -2.0000001353599406
+  rotation 0 -1 0 1.570796360359173
+  name "wall(22)"
   size 0.5 0.5 3
 }
 Wall {
@@ -61,7 +133,7 @@ Wall {
   size 0.5 0.5 1
 }
 Wall {
-  translation 0.25 0 10.5
+  translation 0.25 0 2.4999999999999956
   name "wall(1)"
   size 20 0.5 0.5
 }
@@ -88,11 +160,18 @@ Floor {
   tileSize 1 1
 }
 Pioneer2 {
-  translation 0 0 -3
+  translation 0 0 -2.579999999999997
   name "2"
   controllerArgs "2"
+  extensionSlot [
+    Receiver {
+    }
+    Emitter {
+    }
+  ]
 }
 Pioneer2 {
+  translation -0.0011167471663107685 0 0.0010264118338039199
   name "1"
   controllerArgs "1"
   extensionSlot [

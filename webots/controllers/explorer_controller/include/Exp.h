@@ -24,10 +24,11 @@
 #include <com/RobOrd.h>
 
 #define TTL_MAX 3
-#define CHECK_NEIGHBOURS_RATE 100 // 10ms per unit
+#define HELLO_MESSAGE_RATE 100 // 10ms per unit
 
 class Exp {
     bool run_ = true;
+    bool init_ = false;
     string id_;
 
     Map map_;
@@ -38,28 +39,30 @@ class Exp {
     std::queue<string> actionsQueue;
 
     enum status {
+        initting,
         standBy,
         followingWall,
-        joiningNeighboor,
         exploring,
         finished
     };
 
-    status status_ = standBy;
+    status status_ = initting;
 
     int x_ = 0;
     int y_ = 0;
     int heading_ = 0;
 
+    int xHome_ = 0;
+    int yHome_ = 0;
+
     class Neighbour {
     public:
         Neighbour() = default;
 
-        Neighbour(int TTL, int X, int Y) : ttl(TTL), x(X), y(Y) {}
+        Neighbour(int X, int Y) : x(X), y(Y) {}
 
-        int ttl;
-        int x;
-        int y;
+        int x = 0;
+        int y = 0;
     };
 
     std::map<string, Neighbour> neighbours_;
@@ -70,7 +73,7 @@ class Exp {
 
     void handleMapMessage(AirplugMessage msg);
 
-    void updateAndCheckNeighbours();
+    void helloMessage();
 
     Neighbour &closestNeighbour();
 
@@ -83,6 +86,42 @@ class Exp {
     void popActionsQueue();
 
     void clearActionsQueue();
+
+    void continueExploration() {
+        std::pair<int, int> point;
+        bool end = false;
+        bool pathFound = true;
+        do {
+            findFrontiers(map_);
+            auto mapWithOtherRobots = Map(map_);
+
+            for (const auto& neighbour : neighbours_) {
+                for(int i = -1; i <= 1; i++) {
+                    for(int j = -1; j <= 1; j++) {
+                        mapWithOtherRobots[std::make_pair(neighbour.second.x + i, neighbour.second.y + j)] = wall;
+                    }
+                }
+            }
+
+            if (!pathFound) {
+                mapWithOtherRobots[point] = wall;
+                map_[point] = wall;
+            }
+            if (!findClosestFrontier(mapWithOtherRobots, std::make_pair(x_, y_), point)) {
+                end = true;
+                break;
+            }
+        } while (!(pathFound = goToPathFinding(point.first, point.second)));
+        if (end) {
+            status_ = finished;
+            std::cout << "Finished exploration ! Returning to home : " << xHome_ << " " << yHome_ << std::endl;
+            goToPathFinding(xHome_, yHome_);
+        }
+        else {
+            status_ = exploring;
+            std::cout << "Next point to explore :" << point.first << " " << point.second << std::endl;
+        }
+    }
 
     void run() {
 //        int checkNeighbours = 0;
@@ -99,23 +138,13 @@ class Exp {
                 }
             }
             if (status_ == standBy) {
-                findFrontiers(map_);
-                std::pair<int, int> point;
-                findClosestFrontier(map_, std::make_pair(x_, y_), point);
-                if (x_ != point.first || y_ != point.second) {
-                    status_ = exploring;
-                    std::cout << "Next point to explore :" << point.first << " " << point.second << std::endl;
-                    while (!goToPathFinding(point.first, point.second)) {
-                        map_[point] = wall;
-                        findFrontiers(map_);
-                        if (!findClosestFrontier(map_, std::make_pair(x_, y_), point)) {
-                            std::cout << "FINISHED !" << std::endl;
-                            status_ = finished;
-                            break;
-                        }
-                    }
-                }
+                continueExploration();
             }
+            static int hello = 0;
+            if (hello++ == HELLO_MESSAGE_RATE) {
+                helloMessage();
+            }
+
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }

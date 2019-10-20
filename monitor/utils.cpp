@@ -162,6 +162,7 @@ bool findClosestFrontier(const Map &map, const std::pair<int, int> &position, st
     bool found= false;
     double minDist = std::numeric_limits<double>::max();
     double wallNum = 0;
+
     for(auto point : map) {
         if(point.second == frontier) {
             found = true;
@@ -191,4 +192,8 @@ bool findClosestFrontier(const Map &map, const std::pair<int, int> &position, st
         }
     }
     return found;
+}
+
+double distance(int x1, int y1, int x2, int y2) {
+    return std::sqrt(std::pow(x1-x2, 2) + std::pow(y1-y2, 2));
 }

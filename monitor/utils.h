@@ -35,4 +35,5 @@ int coordToMap (int coord);
 void findFrontiers(Map &map);
 bool findClosestFrontier(const Map &map, const std::pair<int, int> &position, std::pair<int, int> &bestFrontier);
 
+double distance(int x1, int y1, int x2, int y2);
 #endif // UTILS_H

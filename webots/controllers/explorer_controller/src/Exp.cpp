@@ -36,17 +36,21 @@ void Exp::handleRobMessage(AirplugMessage msg) {
         } else {
             reportPosToMap();
         }
-        handleWallFollowing(collision);
         if (status_ == exploring && actionsQueue.empty()) {
-            std::cout << "Back to stand by" << std::endl;
-            std::cout << "Position is: " << x_ << " " << y_ << std::endl;
             status_ = standBy;
         }
 
     } else if (ra.getType() == RobAck::curr) {
+
         x_ = coordToMap(ra.getCommand()[0]);
         y_ = coordToMap(ra.getCommand()[1]);
         heading_ = coordToMap(ra.getCommand()[2]);
+
+        if (status_ == initting) {
+            xHome_ = x_;
+            yHome_ = y_;
+            status_ = standBy;
+        }
 
         auto point = std::make_pair(x_, y_);
         if (map_.find(point) == map_.end() || map_[point] != pointType::explored) {
@@ -77,8 +81,15 @@ void Exp::handleExpMessage(AirplugMessage msg) {
         string sender = msg.getValue("sender");
         int x = std::stoi(msg.getValue("xpos"));
         int y = std::stoi(msg.getValue("ypos"));
-        Neighbour nr(TTL_MAX, x, y);
-        neighbours_[sender] = nr;
+
+        if (neighbours_.find(sender) == neighbours_.end()) {
+            Neighbour nr(x, y);
+            neighbours_[sender] = nr;
+        }
+        else {
+            neighbours_[sender].x = x;
+            neighbours_[sender].y = y;
+        }
     }
 }
 
@@ -94,7 +105,7 @@ void Exp::handleMapMessage(AirplugMessage msg) {
     }
 }
 
-void Exp::updateAndCheckNeighbours() {
+void Exp::helloMessage() {
     // First, we send a message to our neighbours telling them we're still here
     AirplugMessage msg("EXP", "EXP", AirplugMessage::air);
     msg.add("sender", id_);
@@ -102,41 +113,7 @@ void Exp::updateAndCheckNeighbours() {
     msg.add("typemsg", "helloNeighbour");
     msg.add("xpos", std::to_string(x_));
     msg.add("ypos", std::to_string(y_));
-
     netMailBox_->push(msg);
-
-    // The remaining operations are only done if we have at least 1 neighbour registered
-    if (!neighbours_.empty()) {
-        // For each neigbour we have, we update their TTL
-        int disappearedNeighbours = 0;
-        for (auto &neighbour : neighbours_) {
-            int ttlValue = --neighbour.second.ttl;
-            if (ttlValue == 0)
-                disappearedNeighbours++;
-        }
-
-        // We check if we are still OK or too far away from other robots
-        Neighbour& bestNeighbour = closestNeighbour();
-
-        if (disappearedNeighbours == neighbours_.size()) {
-            // We don't have any neighbour anymore : we must come back to the closest one
-            // Note: we artificially reset its TTL in order to keep it in the list
-//            bestNeighbour.ttl = TTL_MAX;
-            status_ = joiningNeighboor;
-            goToPathFinding(bestNeighbour.x, bestNeighbour.y);
-        }
-
-        // Finally, if some neighbours have disappeared, we clean them
-        if (disappearedNeighbours) {
-            for (auto it = neighbours_.begin(); it != neighbours_.end();) {
-                if (it->second.ttl == 0) {
-                    it = neighbours_.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
 }
 
 Exp::Neighbour & Exp::closestNeighbour() {
